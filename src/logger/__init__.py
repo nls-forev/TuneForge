@@ -3,34 +3,36 @@ import os
 
 from logging.handlers import RotatingFileHandler
 
-from entity.config_entity import LoggerConfig
+from src.entity.config_entity import LoggerConfig
 
 
 def configure_logger():
     logger = logging.getLogger()
+
+    if logger.handlers:
+        return
+
     logger.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter(
-        "[%(asctime)s] %(name)s - %(levelname) - %(message)s",
+        "[%(asctime)s] %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # Make sure logs dir exist
     os.makedirs(LoggerConfig.log_dir_path, exist_ok=True)
 
-    fileHander = RotatingFileHandler(
+    file_handler = RotatingFileHandler(
         LoggerConfig.log_file_path,
         maxBytes=LoggerConfig.max_log_file_size,
         backupCount=LoggerConfig.log_backup_count,
     )
-    fileHander.setFormatter(formatter)
-    fileHander.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
 
-    consoleHandler = logging.StreamHandler()
-    consoleHandler.setFormatter(formatter)
-    consoleHandler.setLevel(logging.DEBUG)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
 
-    logger.addHandler(fileHander)
-    logger.addHandler(consoleHandler)
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
 
 
 def get_logger(name):

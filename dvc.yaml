@@ -1,0 +1,9 @@
+stages:
+  data_ingestion:
+    cmd: python -m src.pipeline.run_stage ingest
+    deps:
+      - src/components/data_ingestion.py
+
+    outs:
+      - artifact/data_ingestion/raw
+      - artifact/data_ingestion/data_ingested
