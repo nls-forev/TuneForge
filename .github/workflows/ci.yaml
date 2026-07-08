@@ -1,0 +1,30 @@
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.15"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff detect-secrets
+
+      - name: Check linting and formatting
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Detect Secrets
+        run: |
+          git ls-files -z | xargs -0 detect-secrets-hook --baseline .secrets.baseline
