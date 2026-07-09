@@ -81,6 +81,7 @@ class DataIngestion:
                 medmcqa_file_path=self.data_ingestion_config.data_ingestion_medmcqa_val_file_name,
             )
 
+            logger.info("Saved all splits under: ")
             logger.info(data_ingestion_artifact)
 
             return data_ingestion_artifact

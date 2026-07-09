@@ -7,3 +7,12 @@ stages:
     outs:
       - artifact/data_ingestion/raw
       - artifact/data_ingestion/data_ingested
+
+  data_transformation:
+    cmd: python -m src.pipeline.run_stage transform
+    deps:
+      - src/components/data_transformation.py
+      - artifact/data_ingestion/data_ingested
+
+    outs:
+      - artifact/data_transformation/transformed

@@ -7,3 +7,11 @@ class DataIngestionArtifact:
     test_file_path: str
     val_file_path: str
     medmcqa_file_path: str
+
+
+@dataclass
+class DataTransformationArtifact:
+    train_sft_file_path: str
+    test_sft_file_path: str
+    val_sft_file_path: str
+    medmcqa_file_path: str

@@ -1,3 +1,6 @@
+.zed
+*.ipynb
+
 logs
 artifact
 docs
