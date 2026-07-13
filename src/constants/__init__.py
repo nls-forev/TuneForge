@@ -44,10 +44,9 @@ MODEL_TRAINER_DIR = "model_trainer"
 MODEL_TRAINER_ADAPTER_DIR = "adapter"
 MODEL_TRAINER_CHECKPOINT_DIR = "checkpoints"
 
-# Fixed trainer infra flags (never swept — swept hyperparams live in config/hyperparams.yaml)
-LOAD_IN_4BIT = True  # always QLoRA
-USE_GRADIENT_CHECKPOINTING = "unsloth"  # memory infra, fits T4
-LORA_BIAS = "none"  # required for clean adapter merge
+LOAD_IN_4BIT = True
+USE_GRADIENT_CHECKPOINTING = "unsloth"
+LORA_BIAS = "none"
 
 # Experiment tracking
 WANDB_PROJECT = "tuneforge-qlora-medical"

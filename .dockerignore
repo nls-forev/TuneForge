@@ -1,0 +1,7 @@
+.zed
+.env.local
+.env
+.venv
+
+artifact
+docs

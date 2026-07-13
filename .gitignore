@@ -1,6 +1,7 @@
 .vscode
 .zed
 *.ipynb
+.venv
 
 logs
 artifact
