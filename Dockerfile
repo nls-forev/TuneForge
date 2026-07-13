@@ -1,4 +1,5 @@
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
+# CUDA 12.6 matches torch 2.7 (cu126), pinned via the unsloth version ceiling.
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
 
 # uv brings its own standalone CPython (requires-python = 3.11), so we don't
 # apt-install python. git + libgomp1 are needed by triton/bitsandbytes/unsloth.
