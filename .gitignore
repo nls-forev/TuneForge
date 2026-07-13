@@ -1,6 +1,10 @@
+.vscode
 .zed
 *.ipynb
 
 logs
 artifact
 docs
+
+.env
+.env.local

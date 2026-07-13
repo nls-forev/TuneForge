@@ -15,6 +15,9 @@ TEST_FILE_NAME = "test.parquet"
 VAL_FILE_NAME = "val.parquet"
 MEDMCQA_VAL_FILE_NAME = "medmcqa_val.parquet"
 
+# Confif file name
+HYPERPARAMS_FILE_NAME: str = "config/hyperparams.yaml"
+
 TRAIN_SFT_FILE_NAME = "train_sft.parquet"
 TEST_SFT_FILE_NAME = "test_sft.parquet"
 VAL_SFT_FILE_NAME = "val_sft.parquet"
@@ -35,3 +38,16 @@ DATA_INGESTION_TESTVAL_SPLIT_RATIO: float = 0.2
 # DATA TRANSFORMATION
 DATA_TRANSFORMATION_DIR = "data_transformation"
 DATA_TRANSFORMATION_TRANSFORMED_DIR = "transformed"
+
+# MODEL TRAINER
+MODEL_TRAINER_DIR = "model_trainer"
+MODEL_TRAINER_ADAPTER_DIR = "adapter"
+MODEL_TRAINER_CHECKPOINT_DIR = "checkpoints"
+
+# Fixed trainer infra flags (never swept — swept hyperparams live in config/hyperparams.yaml)
+LOAD_IN_4BIT = True  # always QLoRA
+USE_GRADIENT_CHECKPOINTING = "unsloth"  # memory infra, fits T4
+LORA_BIAS = "none"  # required for clean adapter merge
+
+# Experiment tracking
+WANDB_PROJECT = "tuneforge-qlora-medical"

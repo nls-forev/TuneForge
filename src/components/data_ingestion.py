@@ -44,7 +44,7 @@ class DataIngestion:
 
         except Exception as e:
             logger.exception(f"Error: {e}")
-            raise e
+            raise
 
     def split_dataset(self, dataset: Dataset, bench: Dataset) -> DataIngestionArtifact:
         try:
@@ -88,7 +88,7 @@ class DataIngestion:
 
         except Exception as e:
             logger.exception(f"Error: {e}")
-            raise e
+            raise
 
     def init_data_ingestion(self) -> DataIngestionArtifact:
         logger.info("Initiating Data ingestion...")

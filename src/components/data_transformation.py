@@ -1,5 +1,4 @@
 import os
-
 import numpy as np
 import pandas as pd
 from datasets import Dataset
@@ -80,7 +79,7 @@ class DataTransformation:
 
         except Exception as e:
             logger.exception(f"Error: {e}")
-            raise e
+            raise
 
     def _transform_medmcqa(self, src_file, dest_path, tokenizer):
         df = pd.read_parquet(src_file)
@@ -128,7 +127,7 @@ class DataTransformation:
 
         except Exception as e:
             logger.exception(f"Error: {e}")
-            raise e
+            raise
 
     def init_data_transformation(self) -> DataTransformationArtifact:
         logger.info("Initializing data transformation stage...")

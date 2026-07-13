@@ -24,7 +24,14 @@ from src.constants import (
     TEST_SFT_FILE_NAME,
     VAL_SFT_FILE_NAME,
     MEDMCQA_FILE_NAME,
+    # Model trainer
+    MODEL_TRAINER_CHECKPOINT_DIR,
+    MODEL_TRAINER_ADAPTER_DIR,
+    MODEL_TRAINER_DIR,
+    HYPERPARAMS_FILE_NAME,
 )
+
+from src.utils.main_utils import load_yaml
 
 from from_root import from_root
 
@@ -82,3 +89,24 @@ class DataTransformationConfig:
     data_transformation_medmcqa_file_name: str = os.path.join(
         data_transformation_transformed_dir, MEDMCQA_FILE_NAME
     )
+
+
+@dataclass
+class ModelTrainerConfig:
+    model_trainer_dir: str = os.path.join(ARTIFACT_DIR, MODEL_TRAINER_DIR)
+    model_trainer_checkpoint_dir: str = os.path.join(
+        model_trainer_dir, MODEL_TRAINER_CHECKPOINT_DIR
+    )
+    model_trainer_adapter_dir: str = os.path.join(
+        model_trainer_dir, MODEL_TRAINER_ADAPTER_DIR
+    )
+    run_name: str = ""
+
+    def __post_init__(self):
+        # Build run_name from swept hyperparams so each sweep run gets a distinct,
+        # readable W&B label (e.g. "r16-a32-lr0.0002-rslora").
+        cfg = load_yaml(os.path.join(from_root(), HYPERPARAMS_FILE_NAME))
+        lora = cfg["lora"]
+        lr = float(cfg["model"]["lr"])
+        tag = "rslora" if lora["use_rslora"] else "lora"
+        self.run_name = f"r{lora['lora_r']}-a{lora['lora_alpha']}-lr{lr}-{tag}"

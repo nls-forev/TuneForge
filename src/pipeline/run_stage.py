@@ -2,6 +2,7 @@ import argparse
 
 from src.components.data_ingestion import DataIngestion
 from src.components.data_transformation import DataTransformation
+from src.components.model_trainer import ModelTrainer
 
 from src.entity.config_entity import (
     DataIngestionConfig,
@@ -47,9 +48,16 @@ def run_transform():
     ).init_data_transformation()
 
 
+def run_trainer():
+    ModelTrainer(
+        data_transformation_artifact=transformation_artifact(),
+    ).init_model_trainer()
+
+
 STAGES = {
     "ingest": run_ingest,
     "transform": run_transform,
+    "train": run_trainer,
 }
 
 

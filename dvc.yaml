@@ -16,3 +16,14 @@ stages:
 
     outs:
       - artifact/data_transformation/transformed
+
+  model_train:
+    cmd: python -m src.pipeline.run_stage train
+    deps:
+      - config/hyperparams.yaml
+      - src/components/model_trainer.py
+      - artifact/data_transformation/transformed
+
+    outs:
+      - artifact/model_trainer/checkpoints
+      - artifact/model_trainer/adapter

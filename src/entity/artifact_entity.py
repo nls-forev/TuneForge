@@ -15,3 +15,10 @@ class DataTransformationArtifact:
     test_sft_file_path: str
     val_sft_file_path: str
     medmcqa_file_path: str
+
+
+@dataclass
+class ModelTrainerArtifact:
+    adapter_path: str
+    train_loss: float
+    train_runtime: float
