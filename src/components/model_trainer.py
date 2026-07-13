@@ -138,6 +138,7 @@ class ModelTrainer:
                 "eval_strategy": "steps",
                 "eval_steps": cfg["eval_steps"],
                 "save_steps": cfg["save_steps"],
+                "save_total_limit": cfg["save_total_limit"],
                 "dataset_text_field": "text",
                 "max_length": MAX_SEQ_LENGTH,
                 "seed": RANDOM_STATE,
@@ -158,8 +159,18 @@ class ModelTrainer:
                 processing_class=tokenizer,
             )
 
+            # Auto-resume if checkpoint exists else fresh start.
+            ckpt_dir = self.model_trainer_config.model_trainer_checkpoint_dir
+            has_checkpoint = os.path.isdir(ckpt_dir) and any(
+                name.startswith("checkpoint-") for name in os.listdir(ckpt_dir)
+            )
+            if has_checkpoint:
+                logger.info("Found existing checkpoint in %s — resuming.", ckpt_dir)
+            else:
+                logger.info("No checkpoint found — starting fresh training.")
+
             logger.info("Starting SFT training...")
-            train_stats = trainer.train()
+            train_stats = trainer.train(resume_from_checkpoint=has_checkpoint)
             logger.info("Completed training. Stats: %s", train_stats.metrics)
 
             return trainer, train_stats
