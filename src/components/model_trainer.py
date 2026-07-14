@@ -139,9 +139,6 @@ class ModelTrainer:
                 "eval_steps": cfg["eval_steps"],
                 "save_steps": cfg["save_steps"],
                 "save_total_limit": cfg["save_total_limit"],
-                # safetensors drops unsloth adapter weights from checkpoints
-                # (breaks both the saved model and resume) — use torch.save.
-                "save_safetensors": False,
                 "dataset_text_field": "text",
                 "max_length": MAX_SEQ_LENGTH,
                 "seed": RANDOM_STATE,
@@ -153,6 +150,12 @@ class ModelTrainer:
             }
 
             sft_config = SFTConfig(**sft_kwargs)  # ty:ignore[invalid-argument-type]
+            # safetensors drops unsloth adapter weights from checkpoints (breaks
+            # both the saved model and resume) — use torch.save. Set after
+            # construction: unsloth's generated SFTConfig __init__ rejects the
+            # kwarg, but the underlying TrainingArguments field exists and the
+            # Trainer reads it at checkpoint time.
+            sft_config.save_safetensors = False
 
             trainer = SFTTrainer(
                 model=model,
