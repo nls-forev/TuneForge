@@ -15,11 +15,11 @@ lora:
 model:
   lr: 2e-4
   epochs: 2
-  # effective batch = batch_size * grad_accum = 16 (same as the proven run);
-  # bigger microbatch on the 48GB L40S = fewer accum passes per step = faster,
-  # without changing LR dynamics.
-  batch_size: 8
-  grad_accum: 2
+  # effective batch = batch_size * grad_accum = 16 (same as the proven run).
+  # microbatch 4 is the A10G-proven size (24GB); batch 8 risked OOM on A10G.
+  # LR dynamics depend only on the effective batch, so this is unchanged.
+  batch_size: 4
+  grad_accum: 4
   warmup_ratio: 0.03
   weight_decay: 0.01
   lr_scheduler: "cosine"
