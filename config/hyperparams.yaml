@@ -15,11 +15,10 @@ lora:
 model:
   lr: 2e-4
   epochs: 2
-  # effective batch = batch_size * grad_accum = 16 (same as the proven run).
-  # microbatch 4 used only ~7.7/22GB on A10G, so run microbatch 8; LR dynamics
-  # depend only on the effective batch, so this is unchanged.
-  batch_size: 8
-  grad_accum: 2
+  # effective batch = batch_size * grad_accum = 16
+  # increased batch_size to 16 to utilize more VRAM (~16-17/23 GB on A10G).
+  batch_size: 16
+  grad_accum: 1
   warmup_ratio: 0.03
   weight_decay: 0.01
   lr_scheduler: "cosine"
