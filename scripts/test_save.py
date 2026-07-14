@@ -11,7 +11,7 @@ import os
 
 from unsloth import FastLanguageModel
 
-MODEL = "unsloth/llama-3.1-8b-instruct-unsloth-bnb-4bit"
+MODEL = os.environ.get("TEST_MODEL", "unsloth/llama-3.1-8b-instruct-unsloth-bnb-4bit")
 
 model, tok = FastLanguageModel.from_pretrained(
     model_name=MODEL, max_seq_length=2048, dtype=None, load_in_4bit=True

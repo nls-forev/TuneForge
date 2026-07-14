@@ -14,13 +14,17 @@ lora:
 
 model:
   lr: 2e-4
-  epochs: 1
-  batch_size: 4
-  grad_accum: 4
+  epochs: 2
+  # effective batch = batch_size * grad_accum = 16 (same as the proven run);
+  # bigger microbatch on the 48GB L40S = fewer accum passes per step = faster,
+  # without changing LR dynamics.
+  batch_size: 8
+  grad_accum: 2
   warmup_ratio: 0.03
   weight_decay: 0.01
   lr_scheduler: "cosine"
   logging_steps: 10
-  eval_steps: 500
-  save_steps: 500
+  # eval/save every 1000 steps (was 500) to cut eval overhead over 2 epochs.
+  eval_steps: 1000
+  save_steps: 1000
   save_total_limit: 3
