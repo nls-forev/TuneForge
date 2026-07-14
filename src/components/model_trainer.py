@@ -139,6 +139,9 @@ class ModelTrainer:
                 "eval_steps": cfg["eval_steps"],
                 "save_steps": cfg["save_steps"],
                 "save_total_limit": cfg["save_total_limit"],
+                # safetensors drops unsloth adapter weights from checkpoints
+                # (breaks both the saved model and resume) — use torch.save.
+                "save_safetensors": False,
                 "dataset_text_field": "text",
                 "max_length": MAX_SEQ_LENGTH,
                 "seed": RANDOM_STATE,
@@ -181,14 +184,30 @@ class ModelTrainer:
 
     def _save(self, model, tokenizer) -> str:
         try:
+            import glob
+
             adapter_path = self.model_trainer_config.model_trainer_adapter_dir
             os.makedirs(adapter_path, exist_ok=True)
 
-            model.save_pretrained(adapter_path)
+            # safetensors silently drops the adapter weights for unsloth models
+            # trained with gradient offloading (writes adapter_config.json but no
+            # adapter_model.safetensors). torch.save tolerates the offloaded state.
+            model.save_pretrained(adapter_path, safe_serialization=False)
             tokenizer.save_pretrained(adapter_path)
 
+            # A config without weights is useless — fail loudly instead of
+            # reporting a "successful" save that produced no model.
+            weights = glob.glob(os.path.join(adapter_path, "adapter_model.*"))
+            total = sum(os.path.getsize(f) for f in weights)
+            if total < 1_000_000:
+                raise RuntimeError(
+                    f"Adapter weights missing/too small after save "
+                    f"({total} bytes). Dir contents: {os.listdir(adapter_path)}"
+                )
+
             logger.info(
-                "Saved QLoRA adapter and tokenizer to: %s",
+                "Saved + verified QLoRA adapter (%.1f MB) and tokenizer to: %s",
+                total / 1e6,
                 adapter_path,
             )
 
