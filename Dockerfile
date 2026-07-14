@@ -12,6 +12,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
+# Pin the interpreter: requires-python is ">=3.11" (open-ended) and .python-version
+# isn't COPY'd into the image, so uv would otherwise grab the latest CPython (3.14),
+# which has no torch 2.7 wheels. Force 3.11 to match the lockfile.
+ENV UV_PYTHON=3.11
+
 # Deps first for layer caching. --frozen = fail if uv.lock is stale (run
 # `uv lock` after editing pyproject). dev group kept: `dvc` lives there and the
 # CMD needs it; pre-commit/detect-secrets are tiny pure-python.
