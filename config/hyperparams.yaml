@@ -15,10 +15,14 @@ lora:
 model:
   lr: 2e-4
   epochs: 2
-  # effective batch = batch_size * grad_accum = 16
-  # increased batch_size to 16 to utilize more VRAM (~16-17/23 GB on A10G).
-  batch_size: 16
-  grad_accum: 1
+  # effective batch = batch_size * grad_accum = 16 (same as the original run).
+  # KEEP microbatch 4: use_gradient_checkpointing="unsloth" offloads activations
+  # to the 16GB host RAM (not GPU), so host RAM — not the 22GB A10G VRAM — is the
+  # ceiling. microbatch 8 OOM-killed the box (rc=137) at step 303; batch 4 is the
+  # only size proven to finish a full epoch on g5.xlarge. GPU sitting at ~8GB is
+  # expected and not the bottleneck here.
+  batch_size: 4
+  grad_accum: 4
   warmup_ratio: 0.03
   weight_decay: 0.01
   lr_scheduler: "cosine"
