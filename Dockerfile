@@ -3,8 +3,10 @@ FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
 
 # uv brings its own standalone CPython (requires-python = 3.11), so we don't
 # apt-install python. git + libgomp1 are needed by triton/bitsandbytes/unsloth.
+# gcc: triton JIT-compiles its CUDA driver shim at import (torchao pulls this
+# in) and hard-fails without a C compiler in this runtime-only base image.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git libgomp1 ca-certificates \
+    && apt-get install -y --no-install-recommends git gcc libc6-dev libgomp1 ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy UV to docker
