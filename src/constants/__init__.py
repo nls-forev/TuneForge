@@ -4,7 +4,9 @@ from datetime import datetime
 RANDOM_STATE = 42
 HF_DATASET_ID = "lavita/AlpaCare-MedInstruct-52k"
 MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"
+MODEL_ID_4BIT = "unsloth/Llama-3.1-8B-Instruct-bnb-4bit"
 MAX_SEQ_LENGTH = 2048
+MODEL_PATH = "artifact/model_trainer/model"
 
 # Pipeline config
 ARTIFACT_DIR = "artifact"

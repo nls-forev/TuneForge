@@ -3,6 +3,10 @@
 *.ipynb
 .venv
 
+__pycache__/
+*.pyc
+unsloth_compiled_cache/
+
 logs
 artifact
 docs

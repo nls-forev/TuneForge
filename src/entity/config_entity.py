@@ -110,3 +110,8 @@ class ModelTrainerConfig:
         lr = float(cfg["model"]["lr"])
         tag = "rslora" if lora["use_rslora"] else "lora"
         self.run_name = f"r{lora['lora_r']}-a{lora['lora_alpha']}-lr{lr}-{tag}"
+
+
+@dataclass
+class ModelEvaluationConfig:
+    pass

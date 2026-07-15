@@ -1,5 +1,12 @@
 import argparse
 
+from dotenv import load_dotenv
+
+# Load local .env before any component import triggers a HF download. On AWS no
+# .env exists and env comes from the container/SSM, so this is a harmless no-op
+# (override=False keeps real env vars winning).
+load_dotenv()
+
 from src.components.data_ingestion import DataIngestion
 from src.components.data_transformation import DataTransformation
 from src.components.model_trainer import ModelTrainer

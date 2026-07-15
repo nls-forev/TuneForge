@@ -22,3 +22,8 @@ class ModelTrainerArtifact:
     adapter_path: str
     train_loss: float
     train_runtime: float
+
+
+@dataclass
+class ModelEvaluationArtifact:
+    metrics: dict

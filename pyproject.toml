@@ -5,36 +5,63 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 
+# Shared runtime — imported by BOTH the training pipeline and the evaluation
+# stage (via src/constants, src/entity, src/utils and the components). Kept
+# GPU-agnostic so a plain `uv sync` still resolves. The GPU stack lives in the
+# `gpu` group below.
 dependencies = [
-    "datasets>=3.0.0",
-    "fastapi>=0.139.0",
     "from-root>=1.3.0",
-    "jinja2>=3.1.6",
-    "pandera>=0.32.1",
+    "pyyaml>=6.0",          # `import yaml` in constants/config/utils (was transitive)
+    "pandas>=2.0",          # both stages read parquet
     # torch/transformers capped to what unsloth 2026.7.2 supports (torch<=2.7,
     # transformers<=5.5). unsloth freezes these to versions it has kernels for;
     # newer -> import/runtime breakage. Local is compile-only, so downgrade is free.
     "torch>=2.4.0,<=2.7.0",
     "transformers>=4.51.3,<=5.5.0",
-    "wandb>=0.25.0",
-]
-
-[project.optional-dependencies]
-# GPU-only training stack, version-locked to unsloth. unsloth hard-couples to
-# trl (<=0.24.0) + a stale unsloth-zoo needs the guarded import; keep both pinned
-# together. trl 0.24 still uses the modern API (max_length / eval_strategy /
-# processing_class), so model_trainer._train needs no change. See:
-# https://github.com/unslothai/unsloth/blob/main/pyproject.toml
-gpu = [
-    "unsloth==2026.7.2",
-    "unsloth-zoo",
-    "trl==0.24.0",
-    "bitsandbytes>=0.44",
 ]
 
 [dependency-groups]
+# GPU model stack loaded by BOTH training and evaluation (unsloth FastLanguageModel
+# + 4bit bitsandbytes + peft adapters). Version-locked to unsloth: it hard-couples
+# to a stale unsloth-zoo (guarded import) and bitsandbytes; keep them pinned
+# together. Included by `train` and `evaluate` so the two never drift.
+# See: https://github.com/unslothai/unsloth/blob/main/pyproject.toml
+gpu = [
+    "unsloth==2026.7.2",
+    "unsloth-zoo",
+    "bitsandbytes>=0.44",
+    "peft>=0.14",           # get_peft_model (train) + PeftModel.from_pretrained (eval)
+]
+
+# Training pipeline: ingest -> transform -> train. trl 0.24 still uses the modern
+# API (max_length / eval_strategy / processing_class), so model_trainer._train
+# needs no change.
+train = [
+    { include-group = "gpu" },
+    "trl==0.24.0",
+    "datasets>=3.0.0",
+    "wandb>=0.25.0",
+    "numpy>=1.26",          # data_transformation
+    "python-dotenv>=1.0",   # run_stage load_dotenv
+]
+
+# Evaluation stage (main.py -> ModelEvaluation): loads base 4bit model + adapter,
+# runs MedMCQA inference. No trl/datasets/wandb needed.
+evaluate = [
+    { include-group = "gpu" },
+    "huggingface-hub>=0.34", # snapshot_download of the base 4bit model
+    "tqdm>=4.66",            # eval progress bar
+    "wandb>=0.25.0",         # log eval metrics
+]
+
 dev = [
     "detect-secrets>=1.5.0",
     "dvc>=3.67.1",
     "pre-commit>=4.6.0",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# load_dotenv() must run before importing modules that trigger HF downloads,
+# so their imports intentionally sit below it.
+"main.py" = ["E402"]
+"src/pipeline/run_stage.py" = ["E402"]

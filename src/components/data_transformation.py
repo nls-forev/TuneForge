@@ -97,7 +97,10 @@ class DataTransformation:
                 tokenize=False,
                 add_generation_prompt=True,
             )
-            return {"prompt": prompt, "answer": letters[ex["cop"]]}
+            return {
+                "prompt": prompt,
+                "answer": letters[ex["cop"]],
+            }
 
         ds = Dataset.from_pandas(df, preserve_index=False).map(build)
         ds.select_columns(["prompt", "answer"]).to_parquet(dest_path)

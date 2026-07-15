@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 
 import os
 from typing import Any, Tuple
@@ -181,19 +182,20 @@ class ModelTrainer:
             logger.exception("Model training failed.")
             raise
 
-    def _save(self, model, tokenizer) -> str:
+    def _save(self, model, tokenizer, metrics: dict) -> str:
         try:
             adapter_path = self.model_trainer_config.model_trainer_adapter_dir
             os.makedirs(adapter_path, exist_ok=True)
 
             # safetensors silently drops the adapter weights for unsloth models
-            # trained with gradient offloading (writes adapter_config.json but no
-            # adapter_model.safetensors). torch.save tolerates the offloaded state.
             model.save_pretrained(adapter_path, safe_serialization=False)
             tokenizer.save_pretrained(adapter_path)
 
+            with open(os.path.join(adapter_path, "metrics.json"), "w") as f:
+                json.dump(metrics, f)
+
             logger.info(
-                "Saved + verified QLoRA adapter and tokenizer to: %s",
+                "Saved + verified QLoRA adapter, tokenizer and metrics to: %s",
                 adapter_path,
             )
 
@@ -216,9 +218,9 @@ class ModelTrainer:
             val_df,
         )
 
-        adapter_path = self._save(model, tokenizer)
-
         metrics = train_stats.metrics
+
+        adapter_path = self._save(model, tokenizer, metrics)
 
         logger.info("Completed model trainer stage.")
 

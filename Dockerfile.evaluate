@@ -1,0 +1,41 @@
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git gcc libc6-dev libgomp1 ca-certificates curl unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# AWS CLI v2 at system level, out of the uv venv so botocore pins don't fight torch.
+RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o /tmp/awscliv2.zip \
+    && unzip -q /tmp/awscliv2.zip -d /tmp \
+    && /tmp/aws/install \
+    && rm -rf /tmp/awscliv2.zip /tmp/aws
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+WORKDIR /app
+
+ENV UV_PYTHON=3.11
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-default-groups --group evaluate
+
+COPY src ./src/
+COPY config ./config/
+COPY deploy ./deploy/
+COPY main.py ./
+
+# from_root anchors on .git or .project-root; .git is dockerignored.
+RUN touch .project-root
+
+ENV ADAPTER_S3_URI="s3://tuneforge-adapters-719201730313/run4/adapter/" \
+    MEDMCQA_S3_URI="s3://tuneforge-adapters-719201730313/evaluation/medmcqa.parquet"
+
+# Pull inputs from S3, evaluate, then upload the artifact (logs always, metrics on
+# success). Base 4bit model self-downloads from HF.
+CMD ["bash", "-c", "set -uo pipefail; \
+mkdir -p artifact/model_trainer/adapter artifact/data_transformation/transformed; \
+aws s3 sync \"$ADAPTER_S3_URI\" artifact/model_trainer/adapter; \
+aws s3 cp \"$MEDMCQA_S3_URI\" artifact/data_transformation/transformed/medmcqa.parquet; \
+uv run python main.py; rc=$?; \
+bash deploy/upload_artifact.sh; \
+exit $rc"]

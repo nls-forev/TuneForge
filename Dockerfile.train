@@ -20,7 +20,9 @@ WORKDIR /app
 ENV UV_PYTHON=3.11
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --extra gpu
+# --no-default-groups drops the `dev` group (detect-secrets/dvc/pre-commit) that
+# uv installs by default; the training image only needs the `train` group.
+RUN uv sync --frozen --no-default-groups --group train
 
 COPY src ./src/
 COPY config ./config/

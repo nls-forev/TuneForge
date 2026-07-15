@@ -986,11 +986,11 @@ name = "fastapi"
 version = "0.139.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "annotated-doc" },
-    { name = "pydantic" },
-    { name = "starlette" },
-    { name = "typing-extensions" },
-    { name = "typing-inspection" },
+    { name = "annotated-doc", marker = "sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "pydantic", marker = "sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "starlette", marker = "sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "typing-extensions", marker = "sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "typing-inspection", marker = "sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d3/af/a5f50ccfa659ec1802cb4ca842c23f06d906a8cc9aef6016a2caeea3d4ed/fastapi-0.139.0.tar.gz", hash = "sha256:99ab7b2d92223c76d6cf10757ab3f89d45b38267fc20b2a136cf02f6beac3145", size = 423016, upload-time = "2026-07-01T16:35:33.436Z" }
 wheels = [
@@ -1844,15 +1844,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mypy-extensions"
-version = "1.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a2/6e/371856a3fb9d31ca8dac321cda606860fa4548858c0cc45d9d1d4ca2628b/mypy_extensions-1.1.0.tar.gz", hash = "sha256:52e68efc3284861e772bbcd66823fde5ae21fd2fdb51c62a211403730b916558", size = 6343, upload-time = "2025-04-22T14:54:24.164Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/7b/2c79738432f5c924bef5071f933bcc9efd0473bac3b4aa584a6f7c1c8df8/mypy_extensions-1.1.0-py3-none-any.whl", hash = "sha256:1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505", size = 4963, upload-time = "2025-04-22T14:54:22.983Z" },
-]
-
-[[package]]
 name = "nest-asyncio"
 version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2320,22 +2311,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/31/89/8fc1c268969fac43688d65fd92e67df24bd128d53cb4d2eee534cd307399/pandas-3.0.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:9c39be2d709d01fa972a0cabc522389fceca4f3969332ba25a7d6c5802cf976a", size = 11828897, upload-time = "2026-05-11T18:54:17.146Z" },
     { url = "https://files.pythonhosted.org/packages/56/3b/e7d20dea247a3e6dc0bd8a6953854afbedc03951def4e7371e05e7263e25/pandas-3.0.3-cp314-cp314t-win_amd64.whl", hash = "sha256:4db8c527972a821cf5286b40ccc57642a39bc62e62022b42f99f8a67fca8c3a1", size = 10900855, upload-time = "2026-05-11T18:54:19.72Z" },
     { url = "https://files.pythonhosted.org/packages/0f/54/68a0978d1ef8502b8492099beaa6e7a0c1b32e3b5d4f677f5810cb08711c/pandas-3.0.3-cp314-cp314t-win_arm64.whl", hash = "sha256:b2c95f8bfc1ee412bf482605d7bfd30c12d1d26bd59fdd91efeef1d4718decb1", size = 9466464, upload-time = "2026-05-11T18:54:22.754Z" },
-]
-
-[[package]]
-name = "pandera"
-version = "0.32.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-    { name = "pydantic" },
-    { name = "typeguard" },
-    { name = "typing-extensions" },
-    { name = "typing-inspect" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/98/74/7ef34611e49990b7e630dcf02c2225d76c2e328ec2804186c2b9c52e916b/pandera-0.32.1.tar.gz", hash = "sha256:72ecd74226847abf0f0437c05f7f10cc8368e306d88a2acc78fa93762c5a0a02", size = 875349, upload-time = "2026-06-29T16:01:48.72Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/d0/411c82285a7586e97326020f6b5ecbc2f2ffcbef72aa108c897de1b0a540/pandera-0.32.1-py3-none-any.whl", hash = "sha256:1a17a3ffa906174d19207715f4f082ec3db3709647927ad8c095c147d74d8454", size = 447840, upload-time = "2026-06-29T16:01:46.877Z" },
 ]
 
 [[package]]
@@ -3453,8 +3428,8 @@ name = "starlette"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "anyio" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "anyio", marker = "sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'linux' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/e3/7c1dc7381d9f8ab7d854328ebfa884e62cb3f3d8549ddfd37c7814f42afa/starlette-1.3.1.tar.gz", hash = "sha256:05d0213193f2fbaae60e2ecb593b4add4262ad4e46536b54abe36f11a71724e0", size = 2703240, upload-time = "2026-06-12T09:23:11.602Z" }
 wheels = [
@@ -3700,22 +3675,11 @@ name = "tuneforge"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "datasets" },
-    { name = "fastapi" },
     { name = "from-root" },
-    { name = "jinja2" },
-    { name = "pandera" },
+    { name = "pandas" },
+    { name = "pyyaml" },
     { name = "torch" },
     { name = "transformers" },
-    { name = "wandb" },
-]
-
-[package.optional-dependencies]
-gpu = [
-    { name = "bitsandbytes" },
-    { name = "trl" },
-    { name = "unsloth" },
-    { name = "unsloth-zoo" },
 ]
 
 [package.dev-dependencies]
@@ -3724,29 +3688,74 @@ dev = [
     { name = "dvc" },
     { name = "pre-commit" },
 ]
+evaluate = [
+    { name = "bitsandbytes" },
+    { name = "huggingface-hub" },
+    { name = "peft" },
+    { name = "tqdm" },
+    { name = "unsloth" },
+    { name = "unsloth-zoo" },
+    { name = "wandb" },
+]
+gpu = [
+    { name = "bitsandbytes" },
+    { name = "peft" },
+    { name = "unsloth" },
+    { name = "unsloth-zoo" },
+]
+train = [
+    { name = "bitsandbytes" },
+    { name = "datasets" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "peft" },
+    { name = "python-dotenv" },
+    { name = "trl" },
+    { name = "unsloth" },
+    { name = "unsloth-zoo" },
+    { name = "wandb" },
+]
 
 [package.metadata]
 requires-dist = [
-    { name = "bitsandbytes", marker = "extra == 'gpu'", specifier = ">=0.44" },
-    { name = "datasets", specifier = ">=3.0.0" },
-    { name = "fastapi", specifier = ">=0.139.0" },
     { name = "from-root", specifier = ">=1.3.0" },
-    { name = "jinja2", specifier = ">=3.1.6" },
-    { name = "pandera", specifier = ">=0.32.1" },
+    { name = "pandas", specifier = ">=2.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "torch", specifier = ">=2.4.0,<=2.7.0" },
     { name = "transformers", specifier = ">=4.51.3,<=5.5.0" },
-    { name = "trl", marker = "extra == 'gpu'", specifier = "==0.24.0" },
-    { name = "unsloth", marker = "extra == 'gpu'", specifier = "==2026.7.2" },
-    { name = "unsloth-zoo", marker = "extra == 'gpu'" },
-    { name = "wandb", specifier = ">=0.25.0" },
 ]
-provides-extras = ["gpu"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "detect-secrets", specifier = ">=1.5.0" },
     { name = "dvc", specifier = ">=3.67.1" },
     { name = "pre-commit", specifier = ">=4.6.0" },
+]
+evaluate = [
+    { name = "bitsandbytes", specifier = ">=0.44" },
+    { name = "huggingface-hub", specifier = ">=0.34" },
+    { name = "peft", specifier = ">=0.14" },
+    { name = "tqdm", specifier = ">=4.66" },
+    { name = "unsloth", specifier = "==2026.7.2" },
+    { name = "unsloth-zoo" },
+    { name = "wandb", specifier = ">=0.25.0" },
+]
+gpu = [
+    { name = "bitsandbytes", specifier = ">=0.44" },
+    { name = "peft", specifier = ">=0.14" },
+    { name = "unsloth", specifier = "==2026.7.2" },
+    { name = "unsloth-zoo" },
+]
+train = [
+    { name = "bitsandbytes", specifier = ">=0.44" },
+    { name = "datasets", specifier = ">=3.0.0" },
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "peft", specifier = ">=0.14" },
+    { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "trl", specifier = "==0.24.0" },
+    { name = "unsloth", specifier = "==2026.7.2" },
+    { name = "unsloth-zoo" },
+    { name = "wandb", specifier = ">=0.25.0" },
 ]
 
 [[package]]
@@ -3783,19 +3792,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f6/cc/6253133b5bb138fc3306cebfbda2c520f545d36b5be2c7255cc528bb45d6/typing_extensions-4.16.0.tar.gz", hash = "sha256:dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5", size = 113555, upload-time = "2026-07-02T08:40:05.92Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl", hash = "sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8", size = 45571, upload-time = "2026-07-02T08:40:04.659Z" },
-]
-
-[[package]]
-name = "typing-inspect"
-version = "0.9.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "mypy-extensions" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/dc/74/1789779d91f1961fa9438e9a8710cdae6bd138c80d7303996933d117264a/typing_inspect-0.9.0.tar.gz", hash = "sha256:b23fc42ff6f6ef6954e4852c1fb512cdd18dbea03134f91f856a95ccc9461f78", size = 13825, upload-time = "2023-05-24T20:25:47.612Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/f3/107a22063bf27bdccf2024833d3445f4eea42b2e598abfbd46f6a63b6cb0/typing_inspect-0.9.0-py3-none-any.whl", hash = "sha256:9ee6fc59062311ef8547596ab6b955e1b8aa46242d854bfc78f4f6b0eff35f9f", size = 8827, upload-time = "2023-05-24T20:25:45.287Z" },
 ]
 
 [[package]]
