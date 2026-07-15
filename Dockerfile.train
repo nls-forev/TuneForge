@@ -19,9 +19,6 @@ WORKDIR /app
 # which has no torch 2.7 wheels. Force 3.11 to match the lockfile.
 ENV UV_PYTHON=3.11
 
-# Deps first for layer caching. --frozen = fail if uv.lock is stale (run
-# `uv lock` after editing pyproject). dev group kept: `dvc` lives there and the
-# CMD needs it; pre-commit/detect-secrets are tiny pure-python.
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --extra gpu
 
@@ -29,8 +26,9 @@ COPY src ./src/
 COPY config ./config/
 
 # from_root anchors on .git or .project-root. .git is dockerignored, so give
-# it an explicit anchor at /app.
 RUN touch .project-root
 
-# Runs the full DVC pipeline (ingest -> transform -> train) on GPU.
-CMD ["uv", "run", "dvc", "repro"]
+# Runs the pipeline (ingest -> transform -> train) on GPU. `dvc repro` is NOT used
+# here: the image has no .dvc/git dir, so dvc errors "not inside a DVC repository".
+# Run the same stages dvc.yaml chains, directly and in order.
+CMD ["bash", "-c", "set -e; for s in ingest transform train; do uv run python -m src.pipeline.run_stage $s; done"]

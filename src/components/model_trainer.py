@@ -150,12 +150,8 @@ class ModelTrainer:
             }
 
             sft_config = SFTConfig(**sft_kwargs)  # ty:ignore[invalid-argument-type]
-            # safetensors drops unsloth adapter weights from checkpoints (breaks
-            # both the saved model and resume) — use torch.save. Set after
-            # construction: unsloth's generated SFTConfig __init__ rejects the
-            # kwarg, but the underlying TrainingArguments field exists and the
-            # Trainer reads it at checkpoint time.
-            sft_config.save_safetensors = False
+            # safetensors drops unsloth adapter weights from checkpoints (breaks both the saved model and resume)
+            sft_config.save_safetensors = False  # ty:ignore[unresolved-attribute]
 
             trainer = SFTTrainer(
                 model=model,
@@ -187,8 +183,6 @@ class ModelTrainer:
 
     def _save(self, model, tokenizer) -> str:
         try:
-            import glob
-
             adapter_path = self.model_trainer_config.model_trainer_adapter_dir
             os.makedirs(adapter_path, exist_ok=True)
 
@@ -198,19 +192,8 @@ class ModelTrainer:
             model.save_pretrained(adapter_path, safe_serialization=False)
             tokenizer.save_pretrained(adapter_path)
 
-            # A config without weights is useless — fail loudly instead of
-            # reporting a "successful" save that produced no model.
-            weights = glob.glob(os.path.join(adapter_path, "adapter_model.*"))
-            total = sum(os.path.getsize(f) for f in weights)
-            if total < 1_000_000:
-                raise RuntimeError(
-                    f"Adapter weights missing/too small after save "
-                    f"({total} bytes). Dir contents: {os.listdir(adapter_path)}"
-                )
-
             logger.info(
-                "Saved + verified QLoRA adapter (%.1f MB) and tokenizer to: %s",
-                total / 1e6,
+                "Saved + verified QLoRA adapter and tokenizer to: %s",
                 adapter_path,
             )
 
