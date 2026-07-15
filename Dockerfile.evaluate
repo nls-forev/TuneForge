@@ -14,7 +14,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
-ENV UV_PYTHON=3.11
+# PYTHONPATH so `python -m src.evaluation.*` resolves imports from /app.
+ENV UV_PYTHON=3.11 \
+    PYTHONPATH=/app
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-default-groups --group evaluate

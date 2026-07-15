@@ -52,12 +52,24 @@ evaluate = [
     "huggingface-hub>=0.34", # snapshot_download of the base 4bit model
     "tqdm>=4.66",            # eval progress bar
     "wandb>=0.25.0",         # log eval metrics
+    "python-dotenv>=1.0",    # main.py / scripts load_dotenv
 ]
 
 dev = [
     "detect-secrets>=1.5.0",
     "dvc>=3.67.1",
     "pre-commit>=4.6.0",
+]
+
+# LLM-as-judge secondary eval (src/evaluation/judge_responses.py, runs locally):
+# DeepSeek via the OpenAI-compatible API + reference-based text metrics.
+judge = [
+    "openai>=1.50",
+    "rouge-score>=0.1.2",
+    "bert-score>=0.3.13",
+    "pandas>=2.0",
+    "pyarrow>=17.0",
+    "python-dotenv>=1.0",
 ]
 
 [tool.ruff.lint.per-file-ignores]
