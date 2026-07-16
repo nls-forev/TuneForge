@@ -45,12 +45,15 @@ train = [
     "python-dotenv>=1.0",   # run_stage load_dotenv
 ]
 
-# Evaluation stage (run_stage evaluate -> ModelEvaluation): loads base 4bit
-# model + adapter, runs MedMCQA inference. No trl/datasets/wandb needed.
+# Eval phase A (run_stage generate -> GenerateResponses.run): loads base 4bit
+# model + adapter, generates base + fine-tuned free-text responses on the test
+# split. No trl/datasets/wandb needed.
 evaluate = [
     { include-group = "gpu" },
     "huggingface-hub>=0.34", # snapshot_download of the base 4bit model
-    "tqdm>=4.66",            # eval progress bar
+    "tqdm>=4.66",            # generation progress bar
+    "numpy>=1.26",           # _build_prompts np.where
+    "pyarrow>=17.0",         # responses.parquet write
     "python-dotenv>=1.0",    # run_stage load_dotenv
 ]
 
@@ -60,8 +63,9 @@ dev = [
     "pre-commit>=4.6.0",
 ]
 
-# LLM-as-judge secondary eval (src/judge/judge_responses.py, runs locally):
-# DeepSeek via the OpenAI-compatible API + reference-based text metrics.
+# Eval phase B (run_stage judge -> Judge.run, runs locally): DeepSeek 1-5 grade
+# + pairwise win-rate via the OpenAI-compatible API + reference-based text
+# metrics (ROUGE-L, BERTScore).
 judge = [
     "openai>=1.50",
     "rouge-score>=0.1.2",

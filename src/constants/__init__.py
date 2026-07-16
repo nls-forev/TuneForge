@@ -15,7 +15,6 @@ ARTIFACT_DIR = "artifact"
 TRAIN_FILE_NAME = "train.parquet"
 TEST_FILE_NAME = "test.parquet"
 VAL_FILE_NAME = "val.parquet"
-MEDMCQA_VAL_FILE_NAME = "medmcqa_val.parquet"
 
 # Confif file name
 HYPERPARAMS_FILE_NAME: str = "config/hyperparams.yaml"
@@ -23,7 +22,6 @@ HYPERPARAMS_FILE_NAME: str = "config/hyperparams.yaml"
 TRAIN_SFT_FILE_NAME = "train_sft.parquet"
 TEST_SFT_FILE_NAME = "test_sft.parquet"
 VAL_SFT_FILE_NAME = "val_sft.parquet"
-MEDMCQA_FILE_NAME = "medmcqa.parquet"
 
 # Logger constants
 LOG_DIR = "logs"
@@ -46,9 +44,19 @@ MODEL_TRAINER_DIR = "model_trainer"
 MODEL_TRAINER_ADAPTER_DIR = "adapter"
 MODEL_TRAINER_CHECKPOINT_DIR = "checkpoints"
 
-# MODEL EVALUATION
+# MODEL EVALUATION (LLM-as-judge free-text eval)
 MODEL_EVALUATION_DIR = "model_evaluation"
 MODEL_EVALUATION_METRICS_FILE_NAME = "metrics.json"
+MODEL_EVALUATION_RESPONSES_FILE_NAME = "responses.parquet"
+MODEL_EVALUATION_SCORES_FILE_NAME = "judge_scores.csv"
+
+# Phase A (generate) knobs
+JUDGE_N_SAMPLES = 200
+JUDGE_MAX_NEW_TOKENS = 512
+
+# Phase B (judge) — DeepSeek grader
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+DEEPSEEK_MODEL = "deepseek-chat"
 
 LOAD_IN_4BIT = True
 USE_GRADIENT_CHECKPOINTING = "unsloth"

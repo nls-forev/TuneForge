@@ -7,10 +7,9 @@ from dotenv import load_dotenv
 # (override=False keeps real env vars winning).
 load_dotenv()
 
-from src.components.data_ingestion import DataIngestion
-from src.components.data_transformation import DataTransformation
-from src.components.model_trainer import ModelTrainer
-from src.components.model_evaluation import ModelEvaluation
+# Components are imported lazily inside each runner so a stage only needs its
+# own dependency group (e.g. `judge` doesn't pull `datasets`/unsloth from the
+# ingest/train components).
 
 from src.entity.config_entity import (
     DataIngestionConfig,
@@ -34,7 +33,6 @@ def ingestion_artifact() -> DataIngestionArtifact:
         config.data_ingestion_train_file_name,
         config.data_ingestion_test_file_name,
         config.data_ingestion_val_file_name,
-        config.data_ingestion_medmcqa_val_file_name,
     )
 
 
@@ -44,21 +42,26 @@ def transformation_artifact() -> DataTransformationArtifact:
         config.data_transformation_train_file_name,
         config.data_transformation_test_file_name,
         config.data_transformation_val_file_name,
-        config.data_transformation_medmcqa_file_name,
     )
 
 
 def run_ingest():
+    from src.components.data_ingestion import DataIngestion
+
     DataIngestion().init_data_ingestion()
 
 
 def run_transform():
+    from src.components.data_transformation import DataTransformation
+
     DataTransformation(
         data_ingestion_artifact=ingestion_artifact(),
     ).init_data_transformation()
 
 
 def run_trainer():
+    from src.components.model_trainer import ModelTrainer
+
     ModelTrainer(
         data_transformation_artifact=transformation_artifact(),
     ).init_model_trainer()
@@ -75,38 +78,28 @@ def trainer_artifact() -> ModelTrainerArtifact:
     )
 
 
-def run_evaluate():
-    ModelEvaluation(
-        data_transformation_artifact=transformation_artifact(),
-        model_trainer_artifact=trainer_artifact(),
-    ).init_evaluation()
-
-
 def run_generate():
-    # Phase A of the LLM-as-judge eval (GPU): generate free-text responses.
-    # Imported lazily so the gpu group is only needed when this stage runs.
-    from src.judge.generate_responses import main as generate_main
+    # Phase A of the LLM-as-judge eval (GPU): base + fine-tuned free-text
+    # responses. Heavy deps (unsloth/torch) load inside the method.
+    from src.components.evaluation.generate_responses import GenerateResponses
 
-    rc = generate_main()
-    if rc:
-        raise SystemExit(rc)
+    GenerateResponses(
+        model_trainer_artifact=trainer_artifact(),
+    ).run()
 
 
 def run_judge():
-    # Phase B of the LLM-as-judge eval (local): DeepSeek + ROUGE-L + BERTScore.
-    # Imported lazily so the judge group is only needed when this stage runs.
-    from src.judge.judge_responses import main as judge_main
+    # Phase B of the LLM-as-judge eval (local): DeepSeek 1-5 + win-rate +
+    # ROUGE-L + BERTScore. Heavy deps (openai/rouge/bert) load inside the method.
+    from src.components.evaluation.judge import Judge
 
-    rc = judge_main()
-    if rc:
-        raise SystemExit(rc)
+    Judge().run()
 
 
 STAGES = {
     "ingest": run_ingest,
     "transform": run_transform,
     "train": run_trainer,
-    "evaluate": run_evaluate,
     "generate": run_generate,
     "judge": run_judge,
 }

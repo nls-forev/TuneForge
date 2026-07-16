@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Uploads the evaluation artifact to S3 after the eval stage finishes. Runs regardless of
-# eval exit code so logs always ship; metrics.json only exists on success, which
-# the watchdog uses as the done/ok signal.
+# Uploads the generate (phase A) artifact to S3 after the stage finishes. Runs
+# regardless of exit code so logs always ship; responses.parquet only exists on
+# success, which the watchdog uses as the done/ok signal. Phase B (judge) runs
+# locally against this responses.parquet and produces metrics.json off-box.
 set -uo pipefail
 
 BUCKET="${EVAL_S3_BUCKET:-tuneforge-adapters-719201730313}"
-METRICS="artifact/model_evaluation/metrics.json"
+RESPONSES="artifact/model_evaluation/responses.parquet"
 
-if [ -f "$METRICS" ]; then
-    aws s3 cp "$METRICS" "s3://${BUCKET}/evaluation/metrics.json"
+if [ -f "$RESPONSES" ]; then
+    aws s3 cp "$RESPONSES" "s3://${BUCKET}/evaluation/responses.parquet"
 else
-    echo "no metrics.json — eval did not complete"
+    echo "no responses.parquet — generate did not complete"
 fi
 
 if compgen -G "logs/*.log" >/dev/null; then

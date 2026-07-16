@@ -81,30 +81,6 @@ class DataTransformation:
             logger.exception(f"Error: {e}")
             raise
 
-    def _transform_medmcqa(self, src_file, dest_path, tokenizer):
-        df = pd.read_parquet(src_file)
-        df = df[df["choice_type"] == "single"]
-        letters = ["A", "B", "C", "D"]
-
-        def build(ex):
-            q = (
-                f"{ex['question']}\n"
-                f"A. {ex['opa']}\nB. {ex['opb']}\n"
-                f"C. {ex['opc']}\nD. {ex['opd']}\nAnswer:"
-            )
-            prompt = tokenizer.apply_chat_template(
-                [{"role": "user", "content": q}],
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-            return {
-                "prompt": prompt,
-                "answer": letters[ex["cop"]],
-            }
-
-        ds = Dataset.from_pandas(df, preserve_index=False).map(build)
-        ds.select_columns(["prompt", "answer"]).to_parquet(dest_path)
-
     def preprocess_text(self, tokenizer):
         try:
             for src_file, dest_path in [
@@ -141,18 +117,9 @@ class DataTransformation:
         self.preprocess_text(tokenizer)
         logger.info("Completed text preprocessing stage.")
 
-        logger.info("Started medmcqa preprocessing...")
-        self._transform_medmcqa(
-            self.data_ingestion_artifact.medmcqa_file_path,
-            self.data_transformation_config.data_transformation_medmcqa_file_name,
-            tokenizer=tokenizer,
-        )
-        logger.info("Completed medmcqa preprocessing stage.")
-
         logger.info("Completed data transformation stage.")
         return DataTransformationArtifact(
             self.data_transformation_config.data_transformation_train_file_name,
             self.data_transformation_config.data_transformation_test_file_name,
             self.data_transformation_config.data_transformation_val_file_name,
-            medmcqa_file_path=self.data_transformation_config.data_transformation_medmcqa_file_name,
         )

@@ -28,12 +28,13 @@ stages:
       - artifact/model_trainer/checkpoints
       - artifact/model_trainer/adapter
 
+  # LLM-as-judge phase B (local, DeepSeek API). Phase A (generate) runs on the
+  # GPU box and produces responses.parquet, synced here before repro.
   model_evaluate:
-    cmd: python -m src.pipeline.run_stage evaluate
+    cmd: python -m src.pipeline.run_stage judge
     deps:
-      - src/components/model_evaluation.py
-      - artifact/model_trainer/adapter
-      - artifact/data_transformation/transformed
+      - src/components/evaluation/judge.py
+      - artifact/model_evaluation/responses.parquet
 
     metrics:
       - artifact/model_evaluation/metrics.json:

@@ -14,7 +14,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
-# PYTHONPATH so `python -m src.judge.*` resolves imports from /app.
+# PYTHONPATH so `python -m src.pipeline.*` resolves imports from /app.
 ENV UV_PYTHON=3.11 \
     PYTHONPATH=/app
 
@@ -29,14 +29,20 @@ COPY deploy ./deploy/
 RUN touch .project-root
 
 ENV ADAPTER_S3_URI="s3://tuneforge-adapters-719201730313/run4/adapter/" \
-    MEDMCQA_S3_URI="s3://tuneforge-adapters-719201730313/evaluation/medmcqa.parquet"
+    MODEL_S3_URI="s3://tuneforge-adapters-719201730313/base-model/" \
+    TEST_S3_URI="s3://tuneforge-adapters-719201730313/evaluation/test.parquet"
 
-# Pull inputs from S3, evaluate, then upload the artifact (logs always, metrics on
-# success). Base 4bit model self-downloads from HF.
+# Phase A (generate, GPU): pull base 4bit model + adapter + held-out test split
+# from S3, generate base + fine-tuned responses, then upload responses.parquet
+# (logs always, responses on success). The base model is synced from S3 (not
+# HF) so the run does not depend on huggingface.co availability — load_base_model
+# uses artifact/model_trainer/model directly when config.json is present. Phase B
+# (judge) runs locally off-box against the uploaded responses.parquet.
 CMD ["bash", "-c", "set -uo pipefail; \
-mkdir -p artifact/model_trainer/adapter artifact/data_transformation/transformed; \
+mkdir -p artifact/model_trainer/adapter artifact/model_trainer/model artifact/data_ingestion/data_ingested; \
+aws s3 sync \"$MODEL_S3_URI\" artifact/model_trainer/model; \
 aws s3 sync \"$ADAPTER_S3_URI\" artifact/model_trainer/adapter; \
-aws s3 cp \"$MEDMCQA_S3_URI\" artifact/data_transformation/transformed/medmcqa.parquet; \
-uv run python -m src.pipeline.run_stage evaluate; rc=$?; \
+aws s3 cp \"$TEST_S3_URI\" artifact/data_ingestion/data_ingested/test.parquet; \
+uv run python -m src.pipeline.run_stage generate; rc=$?; \
 bash deploy/upload_artifact.sh; \
 exit $rc"]
