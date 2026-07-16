@@ -1,3 +1,5 @@
+import json
+import os
 import pandas as pd
 
 from src.constants import (
@@ -89,9 +91,6 @@ class ModelEvaluation:
             from tqdm import tqdm
 
             # Score the first-token logits over the four answer-letter tokens.
-            # The SFT model was trained on free-text answers only, so generating
-            # and parsing the output emits answer *content* (e.g. "Amniotic...")
-            # not the label — logit scoring picks A/B/C/D directly instead.
             letters = ["A", "B", "C", "D"]
             letter_ids = [
                 tokenizer.encode(letter, add_special_tokens=False)[0]
@@ -150,8 +149,30 @@ class ModelEvaluation:
                 "predictions": predictions,
             }
 
-        except Exception:
-            logger.exception("")
+        except Exception as e:
+            logger.exception(f"Unexpected error: {e}")
+            raise
+
+    def _save_metrics(self, metrics: dict):
+        try:
+            os.makedirs(
+                self.model_evaluation_config.model_evaluation_dir, exist_ok=True
+            )
+            with open(
+                self.model_evaluation_config.model_evaluation_metrics_file_name, "w"
+            ) as f:
+                json.dump(metrics, f)
+
+            logger.info(
+                f"Saved metrics to path: {self.model_evaluation_config.model_evaluation_metrics_file_name}"
+            )
+
+        except IOError as e:
+            logger.exception(f"Error occurred while saving the file, error: {e}")
+            raise
+
+        except Exception as e:
+            logger.exception(f"Unexpected error: {e}")
             raise
 
     def init_evaluation(self) -> ModelEvaluationArtifact:
@@ -161,6 +182,7 @@ class ModelEvaluation:
         df = self.load_data()
 
         metrics = self.evaluate(df, model, tokenizer)
+        self._save_metrics(metrics)
 
         logger.info("Completed model evaluation stage.")
 

@@ -24,7 +24,6 @@ RUN uv sync --frozen --no-default-groups --group evaluate
 COPY src ./src/
 COPY config ./config/
 COPY deploy ./deploy/
-COPY main.py ./
 
 # from_root anchors on .git or .project-root; .git is dockerignored.
 RUN touch .project-root
@@ -38,6 +37,6 @@ CMD ["bash", "-c", "set -uo pipefail; \
 mkdir -p artifact/model_trainer/adapter artifact/data_transformation/transformed; \
 aws s3 sync \"$ADAPTER_S3_URI\" artifact/model_trainer/adapter; \
 aws s3 cp \"$MEDMCQA_S3_URI\" artifact/data_transformation/transformed/medmcqa.parquet; \
-uv run python main.py; rc=$?; \
+uv run python -m src.pipeline.run_stage evaluate; rc=$?; \
 bash deploy/upload_artifact.sh; \
 exit $rc"]

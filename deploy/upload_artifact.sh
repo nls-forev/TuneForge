@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Uploads the evaluation artifact to S3 after main.py finishes. Runs regardless of
+# Uploads the evaluation artifact to S3 after the eval stage finishes. Runs regardless of
 # eval exit code so logs always ship; metrics.json only exists on success, which
 # the watchdog uses as the done/ok signal.
 set -uo pipefail

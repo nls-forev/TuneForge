@@ -45,14 +45,13 @@ train = [
     "python-dotenv>=1.0",   # run_stage load_dotenv
 ]
 
-# Evaluation stage (main.py -> ModelEvaluation): loads base 4bit model + adapter,
-# runs MedMCQA inference. No trl/datasets/wandb needed.
+# Evaluation stage (run_stage evaluate -> ModelEvaluation): loads base 4bit
+# model + adapter, runs MedMCQA inference. No trl/datasets/wandb needed.
 evaluate = [
     { include-group = "gpu" },
     "huggingface-hub>=0.34", # snapshot_download of the base 4bit model
     "tqdm>=4.66",            # eval progress bar
-    "wandb>=0.25.0",         # log eval metrics
-    "python-dotenv>=1.0",    # main.py / scripts load_dotenv
+    "python-dotenv>=1.0",    # run_stage load_dotenv
 ]
 
 dev = [
@@ -75,5 +74,4 @@ judge = [
 [tool.ruff.lint.per-file-ignores]
 # load_dotenv() must run before importing modules that trigger HF downloads,
 # so their imports intentionally sit below it.
-"main.py" = ["E402"]
 "src/pipeline/run_stage.py" = ["E402"]

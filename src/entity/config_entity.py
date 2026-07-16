@@ -29,6 +29,9 @@ from src.constants import (
     MODEL_TRAINER_ADAPTER_DIR,
     MODEL_TRAINER_DIR,
     HYPERPARAMS_FILE_NAME,
+    # model evaluation
+    MODEL_EVALUATION_DIR,
+    MODEL_EVALUATION_METRICS_FILE_NAME,
 )
 
 from src.utils.main_utils import load_yaml
@@ -114,4 +117,8 @@ class ModelTrainerConfig:
 
 @dataclass
 class ModelEvaluationConfig:
-    pass
+    model_evaluation_dir: str = os.path.join(ARTIFACT_DIR, MODEL_EVALUATION_DIR)
+    model_evaluation_metrics_file_name: str = os.path.join(
+        model_evaluation_dir,
+        MODEL_EVALUATION_METRICS_FILE_NAME,
+    )

@@ -10,14 +10,17 @@ load_dotenv()
 from src.components.data_ingestion import DataIngestion
 from src.components.data_transformation import DataTransformation
 from src.components.model_trainer import ModelTrainer
+from src.components.model_evaluation import ModelEvaluation
 
 from src.entity.config_entity import (
     DataIngestionConfig,
     DataTransformationConfig,
+    ModelTrainerConfig,
 )
 from src.entity.artifact_entity import (
     DataIngestionArtifact,
     DataTransformationArtifact,
+    ModelTrainerArtifact,
 )
 
 from src.logger import get_logger
@@ -61,10 +64,29 @@ def run_trainer():
     ).init_model_trainer()
 
 
+def trainer_artifact() -> ModelTrainerArtifact:
+    # Eval only reads the adapter; loss/runtime come from training and are
+    # unused here, so they are left at 0.0.
+    config = ModelTrainerConfig()
+    return ModelTrainerArtifact(
+        adapter_path=config.model_trainer_adapter_dir,
+        train_loss=0.0,
+        train_runtime=0.0,
+    )
+
+
+def run_evaluate():
+    ModelEvaluation(
+        data_transformation_artifact=transformation_artifact(),
+        model_trainer_artifact=trainer_artifact(),
+    ).init_evaluation()
+
+
 STAGES = {
     "ingest": run_ingest,
     "transform": run_transform,
     "train": run_trainer,
+    "evaluate": run_evaluate,
 }
 
 

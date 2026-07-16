@@ -4198,7 +4198,6 @@ evaluate = [
     { name = "tqdm" },
     { name = "unsloth" },
     { name = "unsloth-zoo" },
-    { name = "wandb" },
 ]
 gpu = [
     { name = "bitsandbytes" },
@@ -4250,7 +4249,6 @@ evaluate = [
     { name = "tqdm", specifier = ">=4.66" },
     { name = "unsloth", specifier = "==2026.7.2" },
     { name = "unsloth-zoo" },
-    { name = "wandb", specifier = ">=0.25.0" },
 ]
 gpu = [
     { name = "bitsandbytes", specifier = ">=0.44" },
