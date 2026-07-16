@@ -14,7 +14,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
-# PYTHONPATH so `python -m src.evaluation.*` resolves imports from /app.
+# PYTHONPATH so `python -m src.judge.*` resolves imports from /app.
 ENV UV_PYTHON=3.11 \
     PYTHONPATH=/app
 

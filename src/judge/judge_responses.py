@@ -5,7 +5,7 @@ artifact/model_evaluation/responses.parquet from phase A. Needs
 DEEPSEEK_API_KEY in the environment (.env). Writes judge_metrics.json and
 judge_scores.csv next to the input.
 
-Run: PYTHONPATH=. uv run --group judge python -m src.evaluation.judge_responses
+Run: PYTHONPATH=. uv run --group judge python -m src.judge.judge_responses
 """
 
 import json

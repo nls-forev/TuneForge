@@ -61,7 +61,7 @@ dev = [
     "pre-commit>=4.6.0",
 ]
 
-# LLM-as-judge secondary eval (src/evaluation/judge_responses.py, runs locally):
+# LLM-as-judge secondary eval (src/judge/judge_responses.py, runs locally):
 # DeepSeek via the OpenAI-compatible API + reference-based text metrics.
 judge = [
     "openai>=1.50",
