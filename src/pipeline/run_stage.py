@@ -82,11 +82,33 @@ def run_evaluate():
     ).init_evaluation()
 
 
+def run_generate():
+    # Phase A of the LLM-as-judge eval (GPU): generate free-text responses.
+    # Imported lazily so the gpu group is only needed when this stage runs.
+    from src.judge.generate_responses import main as generate_main
+
+    rc = generate_main()
+    if rc:
+        raise SystemExit(rc)
+
+
+def run_judge():
+    # Phase B of the LLM-as-judge eval (local): DeepSeek + ROUGE-L + BERTScore.
+    # Imported lazily so the judge group is only needed when this stage runs.
+    from src.judge.judge_responses import main as judge_main
+
+    rc = judge_main()
+    if rc:
+        raise SystemExit(rc)
+
+
 STAGES = {
     "ingest": run_ingest,
     "transform": run_transform,
     "train": run_trainer,
     "evaluate": run_evaluate,
+    "generate": run_generate,
+    "judge": run_judge,
 }
 
 

@@ -150,9 +150,9 @@ class ModelTrainer:
                 "fp16": not bf16,
             }
 
-            sft_config = SFTConfig(**sft_kwargs)  # ty:ignore[invalid-argument-type]
+            sft_config = SFTConfig(**sft_kwargs)
             # safetensors drops unsloth adapter weights from checkpoints (breaks both the saved model and resume)
-            sft_config.save_safetensors = False  # ty:ignore[unresolved-attribute]
+            sft_config.save_safetensors = False
 
             trainer = SFTTrainer(
                 model=model,

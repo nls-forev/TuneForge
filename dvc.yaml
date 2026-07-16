@@ -27,3 +27,14 @@ stages:
     outs:
       - artifact/model_trainer/checkpoints
       - artifact/model_trainer/adapter
+
+  model_evaluate:
+    cmd: python -m src.pipeline.run_stage evaluate
+    deps:
+      - src/components/model_evaluation.py
+      - artifact/model_trainer/adapter
+      - artifact/data_transformation/transformed
+
+    metrics:
+      - artifact/model_evaluation/metrics.json:
+          cache: false
