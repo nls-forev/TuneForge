@@ -1,13 +1,5 @@
-"""Eval phase B (local): judge the responses from phase A.
-
-Reads ``responses.parquet`` (from generate_responses) and scores the
-fine-tuned response blind on a 1-5 scale via DeepSeek, computes ROUGE-L +
-BERTScore against the reference, and runs a swapped-order pairwise win-rate of
-fine-tuned vs base. Writes the unified ``metrics.json`` + per-row
-``judge_scores.csv``. Needs ``DEEPSEEK_API_KEY`` in the environment.
-
-Heavy deps (openai/rouge/bert) are imported inside the methods.
-"""
+"""Eval phase B (local): DeepSeek 1-5 + pairwise win-rate + ROUGE-L + BERTScore.
+Needs DEEPSEEK_API_KEY in the environment."""
 
 import json
 import os
@@ -21,8 +13,7 @@ from src.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Blind absolute grader: sees only instruction, reference, candidate — never
-# which model produced the answer.
+# Blind absolute grader: never sees which model produced the answer.
 JUDGE_SYSTEM = (
     "You are an impartial medical answer grader. Score the candidate answer "
     "to the given instruction on a 1-5 scale:\n"
@@ -42,10 +33,8 @@ JUDGE_USER_TEMPLATE = (
     "Candidate answer:\n{response}"
 )
 
-# Blind pairwise grader for win-rate: A/B are the two candidates in an order
-# the caller randomises per row to cancel position bias. Length/formatting are
-# explicitly neutralised so the verdict reflects medical substance, not verbosity
-# — LLM judges otherwise over-reward longer, more heavily-formatted answers.
+# Blind pairwise grader, judged in both orders to cancel position bias;
+# length/formatting neutralised so the verdict reflects medical substance.
 PAIRWISE_SYSTEM = (
     "You are an impartial medical answer grader. Two candidate answers (A and "
     "B) respond to the same instruction. Decide which is medically better: "
@@ -134,12 +123,7 @@ class Judge:
         return scores, reasons
 
     def judge_pairwise(self, client, df: pd.DataFrame):
-        """Swapped-order pairwise win-rate: fine-tuned vs base.
-
-        Each row is judged twice with the answers in both orders so position
-        bias cancels. Fine-tuned wins the row only if it is preferred on net
-        across the two orderings; otherwise tie/loss.
-        """
+        """Pairwise win-rate fine-tuned vs base, judged in both orders."""
         outcomes: list[str] = []  # "win" | "tie" | "loss" for fine-tuned
         wins = ties = losses = 0
 

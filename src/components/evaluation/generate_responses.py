@@ -1,13 +1,4 @@
-"""Eval phase A (GPU): generate base + fine-tuned free-text responses.
-
-Loads the base 4-bit model once, generates ``base_response`` for the held-out
-test prompts, then wraps the same weights with the trained adapter and
-generates the fine-tuned ``response``. Writes ``responses.parquet``
-(instruction, reference, response, base_response) for phase B (judge).
-
-Heavy deps (unsloth/torch/peft) are imported inside the methods so the module
-imports cheaply for every pipeline stage.
-"""
+"""Eval phase A (GPU): generate base + fine-tuned responses -> responses.parquet."""
 
 import os
 
@@ -40,15 +31,8 @@ class GenerateResponses:
         self.model_evaluation_config = model_evaluation_config
 
     def load_base_model(self):
-        """Load the base 4-bit model + tokenizer (no adapter).
-
-        Uses MODEL_ID so unsloth resolves the SAME 4-bit repo the adapter was
-        trained against (trainer._load_model also loads MODEL_ID). Train- and
-        eval-time base weights must match or the LoRA deltas are applied to
-        numerically different frozen weights, unfairly degrading the adapter arm.
-        A local MODEL_PATH snapshot is preferred when present (offline / S3-synced
-        runs) — it must be that same base.
-        """
+        # MODEL_ID matches training so LoRA deltas apply to the same frozen
+        # weights; local MODEL_PATH snapshot preferred when present.
         try:
             from unsloth import FastLanguageModel
 

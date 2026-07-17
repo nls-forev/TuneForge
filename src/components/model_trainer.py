@@ -162,11 +162,7 @@ class ModelTrainer:
                 processing_class=tokenizer,
             )
 
-            # Mask loss to assistant tokens only: without this, SFT computes loss
-            # over the prompt tokens too, so the model learns to imitate the
-            # dataset's instruction/answer register instead of just answering —
-            # a prime cause of the run4 free-text quality regression. Markers are
-            # the Llama-3.1 chat-template header spans.
+            # Mask loss to assistant tokens only (skip prompt tokens).
             from unsloth.chat_templates import train_on_responses_only
 
             trainer = train_on_responses_only(

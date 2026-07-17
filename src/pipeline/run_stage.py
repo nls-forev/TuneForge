@@ -2,14 +2,10 @@ import argparse
 
 from dotenv import load_dotenv
 
-# Load local .env before any component import triggers a HF download. On AWS no
-# .env exists and env comes from the container/SSM, so this is a harmless no-op
-# (override=False keeps real env vars winning).
+# Load .env before any component import triggers a HF download; no-op on AWS.
 load_dotenv()
 
-# Components are imported lazily inside each runner so a stage only needs its
-# own dependency group (e.g. `judge` doesn't pull `datasets`/unsloth from the
-# ingest/train components).
+# Components import lazily inside each runner so a stage only needs its own group.
 
 from src.entity.config_entity import (
     DataIngestionConfig,
@@ -68,8 +64,7 @@ def run_trainer():
 
 
 def trainer_artifact() -> ModelTrainerArtifact:
-    # Eval only reads the adapter; loss/runtime come from training and are
-    # unused here, so they are left at 0.0.
+    # Eval only reads the adapter; loss/runtime are unused here.
     config = ModelTrainerConfig()
     return ModelTrainerArtifact(
         adapter_path=config.model_trainer_adapter_dir,
@@ -79,8 +74,7 @@ def trainer_artifact() -> ModelTrainerArtifact:
 
 
 def run_generate():
-    # Phase A of the LLM-as-judge eval (GPU): base + fine-tuned free-text
-    # responses. Heavy deps (unsloth/torch) load inside the method.
+    # Eval phase A (GPU): base + fine-tuned responses.
     from src.components.evaluation.generate_responses import GenerateResponses
 
     GenerateResponses(
@@ -89,8 +83,7 @@ def run_generate():
 
 
 def run_judge():
-    # Phase B of the LLM-as-judge eval (local): DeepSeek 1-5 + win-rate +
-    # ROUGE-L + BERTScore. Heavy deps (openai/rouge/bert) load inside the method.
+    # Eval phase B (local): DeepSeek 1-5 + win-rate + ROUGE-L + BERTScore.
     from src.components.evaluation.judge import Judge
 
     Judge().run()

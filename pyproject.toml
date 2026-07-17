@@ -5,56 +5,43 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 
-# Shared runtime — imported by BOTH the training pipeline and the evaluation
-# stage (via src/constants, src/entity, src/utils and the components). Kept
-# GPU-agnostic so a plain `uv sync` still resolves. The GPU stack lives in the
-# `gpu` group below.
+# Shared runtime for all stages; GPU stack lives in the `gpu` group.
 dependencies = [
     "from-root>=1.3.0",
-    "pyyaml>=6.0",          # `import yaml` in constants/config/utils (was transitive)
-    "pandas>=2.0",          # both stages read parquet
-    # torch/transformers capped to what unsloth 2026.7.2 supports (torch<=2.7,
-    # transformers<=5.5). unsloth freezes these to versions it has kernels for;
-    # newer -> import/runtime breakage. Local is compile-only, so downgrade is free.
+    "pyyaml>=6.0",
+    "pandas>=2.0",
+    # torch/transformers capped to what unsloth 2026.7.2 supports.
     "torch>=2.4.0,<=2.7.0",
     "transformers>=4.51.3,<=5.5.0",
 ]
 
 [dependency-groups]
-# GPU model stack loaded by BOTH training and evaluation (unsloth FastLanguageModel
-# + 4bit bitsandbytes + peft adapters). Version-locked to unsloth: it hard-couples
-# to a stale unsloth-zoo (guarded import) and bitsandbytes; keep them pinned
-# together. Included by `train` and `evaluate` so the two never drift.
-# See: https://github.com/unslothai/unsloth/blob/main/pyproject.toml
+# GPU stack shared by train + evaluate; versions pinned together around unsloth.
 gpu = [
     "unsloth==2026.7.2",
     "unsloth-zoo",
     "bitsandbytes>=0.44",
-    "peft>=0.14",           # get_peft_model (train) + PeftModel.from_pretrained (eval)
+    "peft>=0.14",
 ]
 
-# Training pipeline: ingest -> transform -> train. trl 0.24 still uses the modern
-# API (max_length / eval_strategy / processing_class), so model_trainer._train
-# needs no change.
+# Training pipeline: ingest -> transform -> train.
 train = [
     { include-group = "gpu" },
     "trl==0.24.0",
     "datasets>=3.0.0",
     "wandb>=0.25.0",
-    "numpy>=1.26",          # data_transformation
-    "python-dotenv>=1.0",   # run_stage load_dotenv
+    "numpy>=1.26",
+    "python-dotenv>=1.0",
 ]
 
-# Eval phase A (run_stage generate -> GenerateResponses.run): loads base 4bit
-# model + adapter, generates base + fine-tuned free-text responses on the test
-# split. No trl/datasets/wandb needed.
+# Eval phase A (generate): base + fine-tuned responses on the test split.
 evaluate = [
     { include-group = "gpu" },
-    "huggingface-hub>=0.34", # snapshot_download of the base 4bit model
-    "tqdm>=4.66",            # generation progress bar
-    "numpy>=1.26",           # _build_prompts np.where
-    "pyarrow>=17.0",         # responses.parquet write
-    "python-dotenv>=1.0",    # run_stage load_dotenv
+    "huggingface-hub>=0.34",
+    "tqdm>=4.66",
+    "numpy>=1.26",
+    "pyarrow>=17.0",
+    "python-dotenv>=1.0",
 ]
 
 dev = [
@@ -63,9 +50,7 @@ dev = [
     "pre-commit>=4.6.0",
 ]
 
-# Eval phase B (run_stage judge -> Judge.run, runs locally): DeepSeek 1-5 grade
-# + pairwise win-rate via the OpenAI-compatible API + reference-based text
-# metrics (ROUGE-L, BERTScore).
+# Eval phase B (judge, local): DeepSeek grading + ROUGE-L + BERTScore.
 judge = [
     "openai>=1.50",
     "rouge-score>=0.1.2",
@@ -76,6 +61,5 @@ judge = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# load_dotenv() must run before importing modules that trigger HF downloads,
-# so their imports intentionally sit below it.
+# load_dotenv() must run before imports that trigger HF downloads.
 "src/pipeline/run_stage.py" = ["E402"]

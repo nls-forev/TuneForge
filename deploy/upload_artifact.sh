@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# Uploads the generate (phase A) artifact to S3 after the stage finishes. Runs
-# regardless of exit code so logs always ship; responses.parquet only exists on
-# success, which the watchdog uses as the done/ok signal. Phase B (judge) runs
-# locally against this responses.parquet and produces metrics.json off-box.
+# Upload generate (phase A) outputs to S3; logs always ship, responses only on success.
 set -uo pipefail
 
 BUCKET="${EVAL_S3_BUCKET:-tuneforge-adapters-719201730313}"

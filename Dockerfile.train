@@ -1,36 +1,25 @@
-# CUDA 12.6 matches torch 2.7 (cu126), pinned via the unsloth version ceiling.
+# Training image: ingest -> transform -> train on GPU. CUDA 12.6 matches torch 2.7 (cu126).
 FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
 
-# uv brings its own standalone CPython (requires-python = 3.11), so we don't
-# apt-install python. git + libgomp1 are needed by triton/bitsandbytes/unsloth.
-# gcc: triton JIT-compiles its CUDA driver shim at import (torchao pulls this
-# in) and hard-fails without a C compiler in this runtime-only base image.
+# gcc: triton JIT-compiles at import and fails without a C compiler.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git gcc libc6-dev libgomp1 ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy UV to docker
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
-# Pin the interpreter: requires-python is ">=3.11" (open-ended) and .python-version
-# isn't COPY'd into the image, so uv would otherwise grab the latest CPython (3.14),
-# which has no torch 2.7 wheels. Force 3.11 to match the lockfile.
+# Force 3.11 to match the lockfile (torch 2.7 has no newer-CPython wheels).
 ENV UV_PYTHON=3.11
 
 COPY pyproject.toml uv.lock ./
-# --no-default-groups drops the `dev` group (detect-secrets/dvc/pre-commit) that
-# uv installs by default; the training image only needs the `train` group.
 RUN uv sync --frozen --no-default-groups --group train
 
 COPY src ./src/
 COPY config ./config/
 
-# from_root anchors on .git or .project-root. .git is dockerignored, so give
+# from_root anchors on .project-root (.git is dockerignored).
 RUN touch .project-root
 
-# Runs the pipeline (ingest -> transform -> train) on GPU. `dvc repro` is NOT used
-# here: the image has no .dvc/git dir, so dvc errors "not inside a DVC repository".
-# Run the same stages dvc.yaml chains, directly and in order.
 CMD ["bash", "-c", "set -e; for s in ingest transform train; do uv run python -m src.pipeline.run_stage $s; done"]
