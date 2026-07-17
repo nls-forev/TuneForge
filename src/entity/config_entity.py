@@ -16,14 +16,12 @@ from src.constants import (
     TRAIN_FILE_NAME,
     TEST_FILE_NAME,
     VAL_FILE_NAME,
-    MEDMCQA_VAL_FILE_NAME,
     # Data Transformation
     DATA_TRANSFORMATION_DIR,
     DATA_TRANSFORMATION_TRANSFORMED_DIR,
     TRAIN_SFT_FILE_NAME,
     TEST_SFT_FILE_NAME,
     VAL_SFT_FILE_NAME,
-    MEDMCQA_FILE_NAME,
     # Model trainer
     MODEL_TRAINER_CHECKPOINT_DIR,
     MODEL_TRAINER_ADAPTER_DIR,
@@ -32,6 +30,8 @@ from src.constants import (
     # model evaluation
     MODEL_EVALUATION_DIR,
     MODEL_EVALUATION_METRICS_FILE_NAME,
+    MODEL_EVALUATION_RESPONSES_FILE_NAME,
+    MODEL_EVALUATION_SCORES_FILE_NAME,
 )
 
 from src.utils.main_utils import load_yaml
@@ -69,9 +69,6 @@ class DataIngestionConfig:
     data_ingestion_val_file_name: str = os.path.join(
         data_ingestion_ingested_dir, VAL_FILE_NAME
     )
-    data_ingestion_medmcqa_val_file_name: str = os.path.join(
-        data_ingestion_ingested_dir, MEDMCQA_VAL_FILE_NAME
-    )
 
 
 @dataclass
@@ -88,9 +85,6 @@ class DataTransformationConfig:
     )
     data_transformation_val_file_name = os.path.join(
         data_transformation_transformed_dir, VAL_SFT_FILE_NAME
-    )
-    data_transformation_medmcqa_file_name: str = os.path.join(
-        data_transformation_transformed_dir, MEDMCQA_FILE_NAME
     )
 
 
@@ -121,4 +115,19 @@ class ModelEvaluationConfig:
     model_evaluation_metrics_file_name: str = os.path.join(
         model_evaluation_dir,
         MODEL_EVALUATION_METRICS_FILE_NAME,
+    )
+    model_evaluation_responses_file_name: str = os.path.join(
+        model_evaluation_dir,
+        MODEL_EVALUATION_RESPONSES_FILE_NAME,
+    )
+    model_evaluation_scores_file_name: str = os.path.join(
+        model_evaluation_dir,
+        MODEL_EVALUATION_SCORES_FILE_NAME,
+    )
+    # Phase A (generate) reads the raw held-out test split from data ingestion.
+    model_evaluation_test_file_name: str = os.path.join(
+        ARTIFACT_DIR,
+        DATA_INGESTION_DIR,
+        DATA_INGESTION_INGESTED_DIR,
+        TEST_FILE_NAME,
     )

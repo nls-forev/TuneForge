@@ -28,12 +28,25 @@ stages:
       - artifact/model_trainer/checkpoints
       - artifact/model_trainer/adapter
 
-  model_evaluate:
-    cmd: python -m src.pipeline.run_stage evaluate
+  # LLM-as-judge phase A (GPU): base + fine-tuned responses on the held-out
+  # test split. Needs ~20GB+ VRAM (tested on A10G 24GB).
+  model_generate:
+    cmd: python -m src.pipeline.run_stage generate
     deps:
-      - src/components/model_evaluation.py
+      - src/components/evaluation/generate_responses.py
       - artifact/model_trainer/adapter
-      - artifact/data_transformation/transformed
+      - artifact/data_ingestion/data_ingested
+
+    outs:
+      - artifact/model_evaluation/responses.parquet
+
+  # LLM-as-judge phase B (CPU, DeepSeek API): grades responses.parquet.
+  # Requires DEEPSEEK_API_KEY in the environment (or .env).
+  model_evaluate:
+    cmd: python -m src.pipeline.run_stage judge
+    deps:
+      - src/components/evaluation/judge.py
+      - artifact/model_evaluation/responses.parquet
 
     metrics:
       - artifact/model_evaluation/metrics.json:

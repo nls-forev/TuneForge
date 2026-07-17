@@ -162,6 +162,15 @@ class ModelTrainer:
                 processing_class=tokenizer,
             )
 
+            # Mask loss to assistant tokens only (skip prompt tokens).
+            from unsloth.chat_templates import train_on_responses_only
+
+            trainer = train_on_responses_only(
+                trainer,
+                instruction_part="<|start_header_id|>user<|end_header_id|>\n\n",
+                response_part="<|start_header_id|>assistant<|end_header_id|>\n\n",
+            )
+
             # Auto-resume if checkpoint exists else fresh start.
             ckpt_dir = self.model_trainer_config.model_trainer_checkpoint_dir
             has_checkpoint = os.path.isdir(ckpt_dir) and any(

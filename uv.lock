@@ -4193,7 +4193,10 @@ dev = [
 evaluate = [
     { name = "bitsandbytes" },
     { name = "huggingface-hub" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "peft" },
+    { name = "pyarrow" },
     { name = "python-dotenv" },
     { name = "tqdm" },
     { name = "unsloth" },
@@ -4244,7 +4247,9 @@ dev = [
 evaluate = [
     { name = "bitsandbytes", specifier = ">=0.44" },
     { name = "huggingface-hub", specifier = ">=0.34" },
+    { name = "numpy", specifier = ">=1.26" },
     { name = "peft", specifier = ">=0.14" },
+    { name = "pyarrow", specifier = ">=17.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "tqdm", specifier = ">=4.66" },
     { name = "unsloth", specifier = "==2026.7.2" },

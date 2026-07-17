@@ -1,10 +1,12 @@
+# Eval phase A (generate) on GPU: pull model + adapter + test split from S3,
+# generate responses, upload responses.parquet. Phase B (judge) runs off-box.
 FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git gcc libc6-dev libgomp1 ca-certificates curl unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# AWS CLI v2 at system level, out of the uv venv so botocore pins don't fight torch.
+# AWS CLI v2 at system level so botocore pins don't fight torch.
 RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o /tmp/awscliv2.zip \
     && unzip -q /tmp/awscliv2.zip -d /tmp \
     && /tmp/aws/install \
@@ -14,7 +16,6 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
-# PYTHONPATH so `python -m src.judge.*` resolves imports from /app.
 ENV UV_PYTHON=3.11 \
     PYTHONPATH=/app
 
@@ -25,18 +26,18 @@ COPY src ./src/
 COPY config ./config/
 COPY deploy ./deploy/
 
-# from_root anchors on .git or .project-root; .git is dockerignored.
+# from_root anchors on .project-root (.git is dockerignored).
 RUN touch .project-root
 
-ENV ADAPTER_S3_URI="s3://tuneforge-adapters-719201730313/run4/adapter/" \
-    MEDMCQA_S3_URI="s3://tuneforge-adapters-719201730313/evaluation/medmcqa.parquet"
+ENV ADAPTER_S3_URI="s3://tuneforge-adapters-719201730313/run5/adapter/" \
+    MODEL_S3_URI="s3://tuneforge-adapters-719201730313/base-model/" \
+    TEST_S3_URI="s3://tuneforge-adapters-719201730313/evaluation/test.parquet"
 
-# Pull inputs from S3, evaluate, then upload the artifact (logs always, metrics on
-# success). Base 4bit model self-downloads from HF.
 CMD ["bash", "-c", "set -uo pipefail; \
-mkdir -p artifact/model_trainer/adapter artifact/data_transformation/transformed; \
+mkdir -p artifact/model_trainer/adapter artifact/model_trainer/model artifact/data_ingestion/data_ingested; \
+aws s3 sync \"$MODEL_S3_URI\" artifact/model_trainer/model; \
 aws s3 sync \"$ADAPTER_S3_URI\" artifact/model_trainer/adapter; \
-aws s3 cp \"$MEDMCQA_S3_URI\" artifact/data_transformation/transformed/medmcqa.parquet; \
-uv run python -m src.pipeline.run_stage evaluate; rc=$?; \
+aws s3 cp \"$TEST_S3_URI\" artifact/data_ingestion/data_ingested/test.parquet; \
+uv run python -m src.pipeline.run_stage generate; rc=$?; \
 bash deploy/upload_artifact.sh; \
 exit $rc"]

@@ -2,6 +2,9 @@
 .env.local
 .env
 .venv
+.git
+.dvc
+logs
 
 artifact
 docs

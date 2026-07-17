@@ -1,0 +1,26 @@
+# Full pipeline via `dvc repro`. Needs a GPU with 20GB+ VRAM and DEEPSEEK_API_KEY.
+# Run: docker run --gpus all -e DEEPSEEK_API_KEY=... -v $(pwd)/artifact:/app/artifact tuneforge-pipeline
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git gcc libc6-dev libgomp1 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+WORKDIR /app
+
+ENV UV_PYTHON=3.11 \
+    PYTHONPATH=/app
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-default-groups --group train --group evaluate --group judge --group dev
+
+COPY src ./src/
+COPY config ./config/
+COPY dvc.yaml ./
+
+# from_root needs .project-root; dvc repro needs an initialized repo (no git in image).
+RUN touch .project-root && uv run dvc init --no-scm
+
+CMD ["uv", "run", "dvc", "repro"]
