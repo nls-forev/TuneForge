@@ -1,31 +1,38 @@
-from datasets import load_dataset
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 
-from src.logger import get_logger
-from src.entity.config_entity import DataIngestionConfig
 from src.entity.artifact_entity import DataIngestionArtifact
-from src.constants import RANDOM_STATE
-
+from src.entity.config_entity import DataIngestionConfig
+from src.entity.experiment_config import ExperimentConfig
+from src.logger import get_logger
 
 logger = get_logger(__name__)
 
 
 class DataIngestion:
     def __init__(
-        self, data_ingestion_config: DataIngestionConfig = DataIngestionConfig()
+        self,
+        data_ingestion_config: DataIngestionConfig = DataIngestionConfig(),
+        experiment_config: ExperimentConfig | None = None,
     ):
         self.data_ingestion_config = data_ingestion_config
+        self.experiment_config = experiment_config or ExperimentConfig.load()
 
     def download_raw_data(self) -> Dataset:
         try:
             dataset = load_dataset(
-                self.data_ingestion_config.data_ingestion_hf_dataset_id,
+                self.experiment_config.dataset.id,
+                revision=self.experiment_config.dataset.revision,
                 cache_dir=self.data_ingestion_config.data_ingestion_raw_dir,
-                split="train",
+                split=self.experiment_config.dataset.split,
             )
+            if "source_row_id" not in dataset.column_names:
+                dataset = dataset.add_column(
+                    "source_row_id", [str(i) for i in range(len(dataset))]
+                )
 
             logger.info(
-                f"Successfully downloaded raw data under {self.data_ingestion_config.data_ingestion_raw_dir}"
+                "Successfully downloaded raw data under %s",
+                self.data_ingestion_config.data_ingestion_raw_dir,
             )
 
             return dataset
@@ -37,15 +44,15 @@ class DataIngestion:
     def split_dataset(self, dataset: Dataset) -> DataIngestionArtifact:
         try:
             train_test = dataset.train_test_split(
-                test_size=self.data_ingestion_config.data_ingestion_testval_split_ratio,
-                seed=RANDOM_STATE,
+                test_size=self.experiment_config.dataset.testval_split_ratio,
+                seed=self.experiment_config.seed,
             )
 
             train_ds = train_test["train"]
 
             test_val = train_test["test"].train_test_split(
                 test_size=0.5,
-                seed=RANDOM_STATE,
+                seed=self.experiment_config.seed,
             )
 
             test_ds = test_val["train"]

@@ -1,6 +1,5 @@
 import logging
 import os
-
 from logging.handlers import RotatingFileHandler
 
 from src.entity.config_entity import LoggerConfig
