@@ -1,16 +1,18 @@
 import os
+
 import numpy as np
 import pandas as pd
 from datasets import Dataset
 from transformers import AutoTokenizer
 
-from src.constants import MAX_SEQ_LENGTH, MODEL_ID
 from src.entity.artifact_entity import (
     DataIngestionArtifact,
     DataTransformationArtifact,
 )
 from src.entity.config_entity import DataTransformationConfig
+from src.entity.experiment_config import ExperimentConfig
 from src.logger import get_logger
+from src.utils.text_utils import has_real_input
 
 logger = get_logger(__name__)
 
@@ -19,10 +21,14 @@ class DataTransformation:
     def __init__(
         self,
         data_ingestion_artifact: DataIngestionArtifact,
-        data_transformation_config: DataTransformationConfig = DataTransformationConfig(),
+        data_transformation_config: DataTransformationConfig = (
+            DataTransformationConfig()
+        ),
+        experiment_config: ExperimentConfig | None = None,
     ):
         self.data_ingestion_artifact = data_ingestion_artifact
         self.data_transformation_config = data_transformation_config
+        self.experiment_config = experiment_config or ExperimentConfig.load()
 
     def _to_text(self, tokenizer, example):
         messages = [
@@ -37,15 +43,7 @@ class DataTransformation:
             logger.info("Read parquet file with head: ")
             logger.info(df.head())
 
-            norm = (
-                df["input"]
-                .str.strip()
-                .str.strip('"')
-                .str.strip()
-                .str.lower()
-                .str.replace(" ", "", regex=False)
-            )
-            has_input = norm != "<noinput>"
+            has_input = has_real_input(df["input"])
 
             df["prompt"] = np.where(
                 has_input,
@@ -65,7 +63,10 @@ class DataTransformation:
             ds = Dataset.from_pandas(df, preserve_index=False)
             ds = ds.map(lambda ex: self._to_text(tokenizer, ex))
             ds = ds.filter(
-                lambda x: len(tokenizer(x["text"])["input_ids"]) <= MAX_SEQ_LENGTH
+                lambda x: (
+                    len(tokenizer(x["text"])["input_ids"])
+                    <= self.experiment_config.model.max_seq_length
+                )
             )
             ds = ds.select_columns(["text"])
 
@@ -101,7 +102,8 @@ class DataTransformation:
                 self.to_text(df, dest_path, tokenizer)
 
             logger.info(
-                f"All transformed splits are saved under: {self.data_transformation_config.data_transformation_transformed_dir}"
+                "All transformed splits are saved under: %s",
+                self.data_transformation_config.data_transformation_transformed_dir,
             )
 
         except Exception as e:
@@ -111,7 +113,10 @@ class DataTransformation:
     def init_data_transformation(self) -> DataTransformationArtifact:
         logger.info("Initializing data transformation stage...")
 
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+        tokenizer = AutoTokenizer.from_pretrained(
+            self.experiment_config.model.id,
+            revision=self.experiment_config.model.revision,
+        )
 
         logger.info("Started Preprocessing stage...")
         self.preprocess_text(tokenizer)

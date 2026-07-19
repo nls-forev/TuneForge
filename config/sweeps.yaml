@@ -1,0 +1,5 @@
+parameters:
+  lora_rank: [8, 16, 32]
+  learning_rate: [5e-5, 1e-4, 2e-4]
+  epochs: [1, 2, 3]
+  max_seq_length: [1024, 2048, 4096]
