@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cpu-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU-only development dependencies
+        run: uv sync --only-group dev
+      - name: Lint
+        run: uv run --only-group dev ruff check src tests
+      - name: Test
+        run: uv run --only-group dev pytest -q

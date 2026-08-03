@@ -1,6 +1,6 @@
 from __future__ import annotations
-import json
 
+import json
 import os
 from typing import Any, Tuple
 
@@ -11,9 +11,6 @@ from src.constants import (
     HYPERPARAMS_FILE_NAME,
     LOAD_IN_4BIT,
     LORA_BIAS,
-    MAX_SEQ_LENGTH,
-    MODEL_ID,
-    RANDOM_STATE,
     USE_GRADIENT_CHECKPOINTING,
     WANDB_PROJECT,
 )
@@ -22,10 +19,14 @@ from src.entity.artifact_entity import (
     ModelTrainerArtifact,
 )
 from src.entity.config_entity import ModelTrainerConfig
+from src.entity.experiment_config import ExperimentConfig
 from src.logger import get_logger
 from src.utils.main_utils import load_yaml
 
 logger = get_logger(__name__)
+
+INSTRUCTION_MASK = "<|start_header_id|>user<|end_header_id|>\n\n"
+RESPONSE_MASK = "<|start_header_id|>assistant<|end_header_id|>\n\n"
 
 
 class ModelTrainer:
@@ -33,9 +34,11 @@ class ModelTrainer:
         self,
         data_transformation_artifact: DataTransformationArtifact,
         model_trainer_config: ModelTrainerConfig | None = None,
+        experiment_config: ExperimentConfig | None = None,
     ):
         self.data_transformation_artifact = data_transformation_artifact
         self.model_trainer_config = model_trainer_config or ModelTrainerConfig()
+        self.experiment_config = experiment_config or ExperimentConfig.load()
 
         # Load hyperparameters once and reuse them.
         self.hyperparams: dict[str, Any] = load_yaml(
@@ -51,13 +54,14 @@ class ModelTrainer:
             logger.info("Loaded model and LoRA hyperparameters.")
 
             model, tokenizer = FastLanguageModel.from_pretrained(
-                model_name=MODEL_ID,
-                max_seq_length=MAX_SEQ_LENGTH,
+                model_name=self.experiment_config.model.id,
+                revision=self.experiment_config.model.revision,
+                max_seq_length=self.experiment_config.model.max_seq_length,
                 dtype=None,
                 load_in_4bit=LOAD_IN_4BIT,
             )
 
-            logger.info("Loaded %s and its tokenizer.", MODEL_ID)
+            logger.info("Loaded %s and its tokenizer.", self.experiment_config.model.id)
 
             model = FastLanguageModel.get_peft_model(
                 model=model,
@@ -67,7 +71,7 @@ class ModelTrainer:
                 target_modules=lora_config["target_modules"],
                 use_rslora=lora_config["use_rslora"],
                 use_gradient_checkpointing=USE_GRADIENT_CHECKPOINTING,
-                random_state=RANDOM_STATE,
+                random_state=self.experiment_config.seed,
                 bias=LORA_BIAS,
             )
 
@@ -141,8 +145,8 @@ class ModelTrainer:
                 "save_steps": cfg["save_steps"],
                 "save_total_limit": cfg["save_total_limit"],
                 "dataset_text_field": "text",
-                "max_length": MAX_SEQ_LENGTH,
-                "seed": RANDOM_STATE,
+                "max_length": self.experiment_config.model.max_seq_length,
+                "seed": self.experiment_config.seed,
                 "report_to": "wandb",
                 "run_name": self.model_trainer_config.run_name,
                 "optim": "adamw_8bit",
@@ -151,7 +155,8 @@ class ModelTrainer:
             }
 
             sft_config = SFTConfig(**sft_kwargs)
-            # safetensors drops unsloth adapter weights from checkpoints (breaks both the saved model and resume)
+            # safetensors drops unsloth adapter weights from checkpoints,
+            # breaking both the saved model and resume.
             sft_config.save_safetensors = False
 
             trainer = SFTTrainer(
@@ -167,8 +172,8 @@ class ModelTrainer:
 
             trainer = train_on_responses_only(
                 trainer,
-                instruction_part="<|start_header_id|>user<|end_header_id|>\n\n",
-                response_part="<|start_header_id|>assistant<|end_header_id|>\n\n",
+                instruction_part=INSTRUCTION_MASK,
+                response_part=RESPONSE_MASK,
             )
 
             # Auto-resume if checkpoint exists else fresh start.
@@ -201,7 +206,11 @@ class ModelTrainer:
             tokenizer.save_pretrained(adapter_path)
 
             with open(os.path.join(adapter_path, "metrics.json"), "w") as f:
-                json.dump(metrics, f)
+                json.dump(metrics, f, indent=2)
+
+            self.experiment_config.save_json(
+                os.path.join(adapter_path, "experiment_config.json")
+            )
 
             logger.info(
                 "Saved + verified QLoRA adapter, tokenizer and metrics to: %s",

@@ -2,7 +2,12 @@ stages:
   data_ingestion:
     cmd: python -m src.pipeline.run_stage ingest
     deps:
+      - config/experiment.yaml
       - src/components/data_ingestion.py
+      - src/entity/experiment_config.py
+      - src/constants/__init__.py
+      - src/pipeline/run_stage.py
+      - uv.lock
 
     outs:
       - artifact/data_ingestion/raw
@@ -11,7 +16,12 @@ stages:
   data_transformation:
     cmd: python -m src.pipeline.run_stage transform
     deps:
+      - config/experiment.yaml
       - src/components/data_transformation.py
+      - src/utils/text_utils.py
+      - src/constants/__init__.py
+      - src/pipeline/run_stage.py
+      - uv.lock
       - artifact/data_ingestion/data_ingested
 
     outs:
@@ -21,7 +31,12 @@ stages:
     cmd: python -m src.pipeline.run_stage train
     deps:
       - config/hyperparams.yaml
+      - config/experiment.yaml
       - src/components/model_trainer.py
+      - src/entity/experiment_config.py
+      - src/constants/__init__.py
+      - src/pipeline/run_stage.py
+      - uv.lock
       - artifact/data_transformation/transformed
 
     outs:
@@ -34,11 +49,18 @@ stages:
     cmd: python -m src.pipeline.run_stage generate
     deps:
       - src/components/evaluation/generate_responses.py
+      - config/experiment.yaml
+      - src/entity/experiment_config.py
+      - src/utils/text_utils.py
+      - src/constants/__init__.py
+      - src/pipeline/run_stage.py
+      - uv.lock
       - artifact/model_trainer/adapter
       - artifact/data_ingestion/data_ingested
 
     outs:
       - artifact/model_evaluation/responses.parquet
+      - artifact/model_evaluation/responses.experiment.json
 
   # LLM-as-judge phase B (CPU, DeepSeek API): grades responses.parquet.
   # Requires DEEPSEEK_API_KEY in the environment (or .env).
@@ -46,8 +68,17 @@ stages:
     cmd: python -m src.pipeline.run_stage judge
     deps:
       - src/components/evaluation/judge.py
+      - config/experiment.yaml
+      - artifact/model_evaluation/responses.experiment.json
+      - src/entity/experiment_config.py
+      - src/constants/__init__.py
+      - src/pipeline/run_stage.py
+      - uv.lock
       - artifact/model_evaluation/responses.parquet
 
     metrics:
       - artifact/model_evaluation/metrics.json:
           cache: false
+    outs:
+      - artifact/model_evaluation/judge_scores.csv
+      - artifact/model_evaluation/metrics.experiment.json

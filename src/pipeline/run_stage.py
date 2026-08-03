@@ -7,17 +7,16 @@ load_dotenv()
 
 # Components import lazily inside each runner so a stage only needs its own group.
 
-from src.entity.config_entity import (
-    DataIngestionConfig,
-    DataTransformationConfig,
-    ModelTrainerConfig,
-)
 from src.entity.artifact_entity import (
     DataIngestionArtifact,
     DataTransformationArtifact,
     ModelTrainerArtifact,
 )
-
+from src.entity.config_entity import (
+    DataIngestionConfig,
+    DataTransformationConfig,
+    ModelTrainerConfig,
+)
 from src.logger import get_logger
 
 logger = get_logger(__name__)

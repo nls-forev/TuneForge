@@ -72,7 +72,9 @@ src/
       generate_responses.py    # phase A (GPU): base + FT answers
       judge.py                 # phase B (local): DeepSeek + ROUGE + BERTScore
   constants/ entity/ utils/ logger/
+config/experiment.yaml         # seed, revisions, decoding, fixed eval IDs
 config/hyperparams.yaml        # LoRA + training config
+config/sweeps.yaml             # rank/LR/epoch/max-length sweep grid
 dvc.yaml                       # tracked stages
 Dockerfile.train  Dockerfile.evaluate
 ```
@@ -117,9 +119,25 @@ uv run dvc repro
 QLoRA: r=16, alpha=16, dropout=0.05, rsLoRA, all attention and MLP projections.
 Training: lr=1e-4, 1 epoch, batch 4 x grad-accum 4, cosine schedule, warmup 0.05.
 
+`config/experiment.yaml` is the reproducibility manifest: random seed, exact
+dataset/model revisions, maximum sequence length, generation settings/seeds, and
+optional fixed evaluation row IDs. Its resolved contents are saved beside the
+adapter, generated responses, and metrics.
+
+Queue the full rank x learning-rate x epoch x maximum-length DVC sweep with:
+
+```bash
+PYTHONPATH=. uv run python -m src.pipeline.sweep --dry-run  # inspect commands
+PYTHONPATH=. uv run python -m src.pipeline.sweep            # queue experiments
+dvc exp run --run-all                                       # execute queue
+```
+
 ## Evaluation methodology
 
-- **Sample:** 200 held-out test prompts.
+- **Sample:** 200 deterministically selected held-out prompts, identified by the
+  original dataset `source_row_id` in `responses.parquet`.
+- **Decoding:** configurable sampling parameters, evaluated over fixed generation
+  seeds (42, 43, and 44 by default).
 - **Absolute:** DeepSeek grades each fine-tuned answer 1 to 5.
 - **Pairwise win-rate:** base vs fine-tuned, judged in both orders to cancel
   position bias, with the judge told to ignore length and grade correctness only.

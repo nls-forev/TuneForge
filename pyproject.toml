@@ -47,7 +47,12 @@ evaluate = [
 dev = [
     "detect-secrets>=1.5.0",
     "dvc>=3.67.1",
+    "from-root>=1.3.0",
+    "pandas>=2.0",
     "pre-commit>=4.6.0",
+    "pytest>=8.0",
+    "pyyaml>=6.0",
+    "ruff>=0.9",
 ]
 
 # Eval phase B (judge, local): DeepSeek grading + ROUGE-L + BERTScore.
@@ -59,6 +64,17 @@ judge = [
     "pyarrow>=17.0",
     "python-dotenv>=1.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
 
 [tool.ruff.lint.per-file-ignores]
 # load_dotenv() must run before imports that trigger HF downloads.

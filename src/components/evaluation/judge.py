@@ -9,6 +9,7 @@ import pandas as pd
 from src.constants import DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
 from src.entity.artifact_entity import ModelEvaluationArtifact
 from src.entity.config_entity import ModelEvaluationConfig
+from src.entity.experiment_config import ExperimentConfig
 from src.logger import get_logger
 
 logger = get_logger(__name__)
@@ -60,8 +61,10 @@ class Judge:
     def __init__(
         self,
         model_evaluation_config: ModelEvaluationConfig = ModelEvaluationConfig(),
+        experiment_config: ExperimentConfig | None = None,
     ):
         self.model_evaluation_config = model_evaluation_config
+        self.experiment_config = experiment_config or ExperimentConfig.load()
 
     def _deepseek_client(self):
         from openai import OpenAI
@@ -85,11 +88,27 @@ class Judge:
                     max_tokens=150,
                     response_format={"type": "json_object"},
                 )
-                return json.loads(resp.choices[0].message.content)
+                parsed = json.loads(resp.choices[0].message.content)
+                if not isinstance(parsed, dict):
+                    raise ValueError("judge response must be a JSON object")
+                return parsed
             except Exception:
                 logger.exception("judge call failed (attempt %d)", attempt)
                 time.sleep(2**attempt)
         return None
+
+    @staticmethod
+    def valid_absolute_payload(payload: object) -> bool:
+        if not isinstance(payload, dict):
+            return False
+        try:
+            return 1 <= int(payload["score"]) <= 5
+        except (KeyError, TypeError, ValueError):
+            return False
+
+    @staticmethod
+    def valid_pairwise_payload(payload: object) -> bool:
+        return isinstance(payload, dict) and payload.get("winner") in {"A", "B", "tie"}
 
     def judge_absolute(self, client, df: pd.DataFrame):
         """Blind 1-5 score of the fine-tuned response."""
@@ -103,11 +122,10 @@ class Judge:
             )
             parsed = self._chat_json(client, JUDGE_SYSTEM, user_msg)
             score, reason = None, ""
-            if parsed is not None:
+            if self.valid_absolute_payload(parsed):
                 try:
                     s = int(parsed["score"])
-                    if 1 <= s <= 5:
-                        score, reason = s, str(parsed.get("reason", ""))
+                    score, reason = s, str(parsed.get("reason", ""))
                 except (KeyError, ValueError, TypeError):
                     logger.warning("bad absolute payload at %d: %s", i, parsed)
             scores.append(score)
@@ -124,8 +142,8 @@ class Judge:
 
     def judge_pairwise(self, client, df: pd.DataFrame):
         """Pairwise win-rate fine-tuned vs base, judged in both orders."""
-        outcomes: list[str] = []  # "win" | "tie" | "loss" for fine-tuned
-        wins = ties = losses = 0
+        outcomes: list[str] = []  # "win" | "tie" | "loss" | "error"
+        wins = ties = losses = errors = 0
 
         for i in range(len(df)):
             ft = df["response"].iloc[i]
@@ -143,7 +161,7 @@ class Judge:
                     answer_b=base,
                 ),
             )
-            w1 = (p1 or {}).get("winner", "tie")
+            w1 = (p1 or {}).get("winner")
             if w1 == "A":
                 ft_points += 1
             elif w1 == "B":
@@ -160,7 +178,23 @@ class Judge:
                     answer_b=ft,
                 ),
             )
-            w2 = (p2 or {}).get("winner", "tie")
+            w2 = (p2 or {}).get("winner")
+
+            # A missing/malformed call is not evidence that the answers tied.
+            # Require both order-swapped verdicts before scoring the comparison.
+            if not self.valid_pairwise_payload(p1) or not self.valid_pairwise_payload(
+                p2
+            ):
+                logger.warning(
+                    "invalid pairwise payload at %d: order1=%s order2=%s",
+                    i,
+                    p1,
+                    p2,
+                )
+                outcomes.append("error")
+                errors += 1
+                continue
+
             if w2 == "B":
                 ft_points += 1
             elif w2 == "A":
@@ -188,12 +222,16 @@ class Judge:
                 )
 
         n = len(df)
+        judged = wins + ties + losses
         summary = {
+            "total": n,
             "wins": wins,
             "ties": ties,
             "losses": losses,
-            "win_pct": wins / n if n else 0.0,
-            "loss_pct": losses / n if n else 0.0,
+            "errors": errors,
+            "judged": judged,
+            "win_pct": wins / judged if judged else 0.0,
+            "loss_pct": losses / judged if judged else 0.0,
             "vs": "base Llama-3.1-8B-Instruct",
             "model": DEEPSEEK_MODEL,
         }
@@ -231,8 +269,22 @@ class Judge:
                 self.model_evaluation_config.model_evaluation_metrics_file_name, "w"
             ) as f:
                 json.dump(metrics, f, indent=2)
+            resolved_config = self.experiment_config
+            responses_path = os.path.join(
+                self.model_evaluation_config.model_evaluation_dir,
+                "responses.experiment.json",
+            )
+            if os.path.exists(responses_path):
+                resolved_config = ExperimentConfig.load(responses_path)
+            resolved_config.save_json(
+                os.path.join(
+                    self.model_evaluation_config.model_evaluation_dir,
+                    "metrics.experiment.json",
+                )
+            )
             logger.info(
-                f"Saved metrics to path: {self.model_evaluation_config.model_evaluation_metrics_file_name}"
+                "Saved metrics to path: %s",
+                self.model_evaluation_config.model_evaluation_metrics_file_name,
             )
         except IOError as e:
             logger.exception(f"Error occurred while saving the file, error: {e}")
@@ -267,6 +319,8 @@ class Judge:
         valid = df[df["judge_score"].notna()]
         metrics = {
             "n": len(df),
+            "n_unique_examples": int(df["source_row_id"].nunique()),
+            "generation_seeds": sorted(df["generation_seed"].unique().tolist()),
             "judge": {
                 "mean": float(valid["judge_score"].mean()),
                 "median": float(valid["judge_score"].median()),
